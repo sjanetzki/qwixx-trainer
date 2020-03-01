@@ -2,15 +2,18 @@ from w2_dice_board import Row
 from w2_dice_player_ga import CrossPossibility, Player
 from typing import List
 import numpy as np
+import random
 
 
 class AI(Player):
-    def __init__(self, name, opponents, strategy):
+    def __init__(self, name, opponents, strategy, bias=random.randint(-1, 1)):
         super().__init__(name, opponents)
         self.strategy = strategy
+        self.bias = bias
 
     def _get_sum_situation_(self, situation):
-        return np.dot(self.strategy, situation)
+        # return np.square(np.dot(self.strategy * (self.opponents + 1), situation)) + self.bias # will it work?, square or multiply with a second 'strategy'?
+        return np.dot(self.strategy * (self.opponents + 1), situation)
 
     def get_possibilities_active(self, lst_eyes) -> List[List[CrossPossibility]]:
         possibilities_white_white = []
@@ -90,3 +93,4 @@ class AI(Player):
     def cross_passive(self, lst_eyes):
         possibilities = self.get_possibilities_passive(lst_eyes)
         return self._find_best_turns(possibilities, False)
+

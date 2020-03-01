@@ -13,7 +13,7 @@ class Row(IntEnum):
 class Board:
     """does everything that happens on the board"""
     def __init__(self):
-        self.row_limits = np.array([-1, -1, 14, 14])     # last crossed value in the row # todo schönere lsg für Werte
+        self.row_limits = np.array([1, 1, 13, 13])     # last crossed value in the row
         self.row_numbers = np.array([0, 0, 0, 0])        # number of crosses in a row
         self.penalties = 0
 
@@ -39,66 +39,6 @@ class Board:
         else:
             print("penalties: {}".format(self.penalties))
 
-    def show_better(self) -> None:
-        """shows board as a with pygame functions"""
-        pass
-        # Initialize the game engine
-        pygame.init()
-
-        black = (0, 0, 0)                      # upper- or lowercase letters?
-        dark_grey = (81, 81, 81)
-        light_grey = (229, 229, 229)
-        white = (255, 255, 255)
-        red = (255, 103, 115)
-        yellow = (251, 212, 85)
-        green = (142, 220, 166)
-        blue = (149, 198, 248)
-        green_vibrant = (126, 199, 0)
-        red_vibrant = (255, 0, 50)
-
-        size = (1737, 2774)
-        screen = pygame.display.set_mode(size)
-
-        pygame.display.set_caption("Qwixx Board")
-
-        # Loop until the user clicks the close button.
-        done = False
-        clock = pygame.time.Clock()
-
-        # Loop as long as done == False
-        while not done:
-
-            for event in pygame.event.get():  # User did something
-                if event.type == pygame.QUIT:  # If user clicked close
-                    done = True  # Flag that we are done so we exit this loop
-
-            # Clear the screen and set the screen background
-            screen.fill(light_grey)
-
-            # Draw a rectangle
-            pygame.draw.rect(screen, black, [20, 20, 250, 100], 2)
-
-            # Select the font to use, size, bold, italics
-            font = pygame.font.SysFont('Calibri', 25, True, False)
-
-            # Render the text. "True" means anti-aliased text.
-            # Black is the color. This creates an image of the
-            # letters, but does not put it on the screen
-            text = font.render("My text", True, dark_grey)
-
-            # Put the image of the text on the screen at 250x250
-            screen.blit(text, [250, 250])
-
-            # Go ahead and update the screen with what we've drawn.
-            # This MUST happen after all the other drawing commands.
-            pygame.display.flip()
-
-            # This limits the while loop to a max of 60 times per second.
-            # Leave this out and we will use all CPU we can.
-            clock.tick(60)
-
-        # Be IDLE friendly
-        pygame.quit()
 
     def cross(self, position, completed_lines, is_active_player) -> bool:
         """sets the crosses chosen by the player after checking their validity, returns True if the turn is valid"""
@@ -159,7 +99,105 @@ class Board:
             print("F")
             return False
 
+class PyGameBoard(Board):
 
+    def __init__(self):
+        pass
+
+    def show_background(self) -> None:
+        """shows board as a with pygame functions"""
+        pygame.init()
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+
+        black = (0, 0, 0)                      # upper- or lowercase letters?
+        dark_grey = (120, 120, 120)
+        light_grey = (215, 215, 215)
+        white = (255, 255, 255)
+        light_red = (255, 156, 163)
+        red = (255, 103, 115)
+        light_yellow = (248, 220, 127)
+        yellow = (251, 212, 85)
+        light_green = (184, 221, 196)
+        green = (142, 220, 166)
+        light_blue = (197, 220, 242)
+        blue = (149, 198, 248)
+        green_vibrant = (126, 199, 0)
+        red_vibrant = (255, 0, 50)
+
+        size = (1216, 650)
+        screen = pygame.display.set_mode(size)
+
+        pygame.display.set_caption("Qwixx Board")
+        done = False
+        clock = pygame.time.Clock()
+        while not done:
+
+            for event in pygame.event.get():  # User did something
+                if event.type == pygame.QUIT:  # If user clicked close
+                    done = True  # Flag that we are done so we exit this loop
+
+            screen.fill(white)
+            font = pygame.font.SysFont('letters for learners', 36, True, False)
+            lock = pygame.font.SysFont('letters for learners', 64, True, False)
+
+            pygame.draw.rect(screen, light_red, [32, 32, 1152, 118], 0)
+            for field in range(0, 11):
+                pygame.draw.rect(screen, red, [50 + 92 * field, 50, 80, 80], 0)
+                text = font.render("{}".format(int(field + 2)), True, white)
+                screen.blit(text, [80 + 92 * field, 70])
+            pygame. draw.circle(screen, red, [1112, 90], 36, 0)
+
+            pygame.draw.rect(screen, light_yellow, [32, 158, 1152, 118], 0)
+            for field in range(0, 11):
+                pygame.draw.rect(screen, yellow, [50 + 92 * field, 50 * 2 + 76, 80, 80], 0)
+                text = font.render("{}".format(int(field + 2)), True, white)
+                screen.blit(text, [80 + 92 * field, 70 * 2 + 56])
+            pygame. draw.circle(screen, yellow, [1112, 90 * 2 + 36], 36, 0)
+
+            pygame.draw.rect(screen, light_green, [32, 284, 1152, 118], 0)
+            for field in range(0, 11):
+                pygame.draw.rect(screen, green, [50 + 92 * field, 50 * 3 + 76 * 2, 80, 80], 0)
+                text = font.render("{}".format(int(12 - field)), True, white)
+                screen.blit(text, [80 + 92 * field, 70 * 3 + 56 * 2])
+            pygame. draw.circle(screen, green, [1112, 90 * 3 + 36 * 2], 36, 0)
+
+            pygame.draw.rect(screen, light_blue, [32, 410, 1152, 118], 0)
+            for field in range(0, 11):
+                pygame.draw.rect(screen, blue, [50 + 92 * field, 50 * 4 + 76 * 3, 80, 80], 0)
+                text = font.render("{}".format(int(12 - field)), True, white)
+                screen.blit(text, [80 + 92 * field, 70 * 4 + 56 * 3])
+            pygame. draw.circle(screen, blue, [1112, 90 * 4 + 36 * 3], 36, 0)
+
+            for row in range(4):
+                text = lock.render("*", True, white)
+                screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
+
+            pygame.draw.rect(screen, light_grey, [784, 536, 400, 60], 0)
+            for field in range(1, 5):
+                pygame.draw.rect(screen, dark_grey, [970 + 10 * field + 40 * (field - 1), 546, 40, 40], 0)
+            text = font.render("penalties", True, dark_grey)
+            screen.blit(text, [800, 546])
+            self.button(980, 567, 40, 40, light_grey, red_vibrant, 1)
+            pygame.display.flip()
+            # print(mouse)
+            clock.tick(60)
+        pygame.quit()
+
+    def button(self, x, y, w, h, ic, ac, action=None):
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        size = (1216, 650)
+        screen = pygame.display.set_mode(size)
+        if int(x + w) > int(mouse[0]) > x and int(y + h) > int(mouse[1]) > y:
+            pygame.draw.rect(screen, ac, (x, y, w, h))
+            if click[0] == 1 and action != None:
+                action()
+            else:
+                pygame.draw.rect(screen, ic, (x, y, w, h))
+            print(mouse)
+
+   
 def test():
     """tests whether the board is working right or not"""
 
@@ -313,5 +351,6 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
+    board = PyGameBoard
+    board.show_background(board)
 

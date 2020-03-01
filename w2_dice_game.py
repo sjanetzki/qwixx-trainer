@@ -2,6 +2,8 @@ from w2_dice_dice import Dice as dice
 from w2_dice_board import Board as board
 from w2_dice_aiplayer import AI as ai
 import numpy as np
+import random
+
 
 
 class Game:
@@ -20,7 +22,7 @@ class Game:
     def is_completed(self) -> bool:
         for player_index in range(self.player_count):
             penalties = self.lst_boards[player_index].penalties
-            assert(penalties in range(5))
+            assert (penalties in range(5))
             if penalties == 4:
                 return True
             for color in range(4):
@@ -59,8 +61,8 @@ class Game:
                     turns = turns_per_player[player_index]
                     for turn in turns:
                         # if turn is not None:
-                        assert(self.lst_boards[player_index].cross(turn, self.completed_lines,
-                                                                   player_index == active_player_index))  # hier x gesetzt
+                        assert (self.lst_boards[player_index].cross(turn, self.completed_lines,
+                                                                    player_index == active_player_index))  # hier x gesetzt
                         # else:
                         #     if turns[0] is None:
                         #         self.lst_player[0].cross_passive(lst_eyes)
@@ -74,11 +76,14 @@ class Game:
                     return
             round += 1
 
+
 # game = Game([human("meep", 2), ai("gans", 2, np.random.randn(27), 0), player("glueck", 2)], 3)
 # game = Game([ai("alice", 2, np.random.randn(27), 0), ai("bob", 2, np.random.randn(27), 0),
 #              ai("cia", 2, np.random.randn(27), 0)], 3)
-game = Game([ai("alice", 2, np.random.randn(27)), ai("bob", 2, np.random.randn(27)),
+game = Game([ai("alice", 2, np.random.randn(27)),
+             ai("bob", 2, np.random.randn(27)),
              ai("cia", 2, np.random.randn(27))])
+
 
 def test():
     print(game.completed())

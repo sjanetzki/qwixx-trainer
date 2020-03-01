@@ -1,21 +1,21 @@
 from w2_dice_aiplayer import AI
 from w2_dice_game import Game
-from numpy import random
 import numpy as np
+from numpy import random
 import random
 from typing import List
 
 
 class Trainer:
-    def __init__(self, group_size=1, population_size=100, survivor_ratio=0.95, child_ratio=0.5, mutation_rate=0.005,
-                 generations=1000, accept_all_generations=True):
+    def __init__(self, group_size=1, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
+                 generations=1000, saved_ais_rate=0.15):
         self.group_size = group_size
         self.population_size = population_size
-        self.survivor_ratio = survivor_ratio
-        self.child_ratio = child_ratio
+        self.survivor_rate = survivor_rate
+        self.child_rate = child_rate
         self.mutation_rate = mutation_rate
         self.generations = generations
-        self.accept_all_generations = accept_all_generations
+        self.saved_ais_rate = saved_ais_rate
 
     def _group(self, population) -> List[AI]:
         random.shuffle(population)
@@ -41,15 +41,16 @@ class Trainer:
         return ranking
 
     def _select(self, population_ranked) -> List[AI]:
-        return population_ranked[0: int(self.survivor_ratio * self.population_size)]     # slice operation
+        return population_ranked[0: int(self.survivor_rate * self.population_size)]     # slice operation
 
     def _mix_strategies(self, parent1, parent2) -> AI:
-        child_strategy = (parent1.strategy + parent2.strategy) / 2.0
+        child_strategy = tuple(x/2 for x in (parent1.strategy + parent2.strategy))
+        # child_strategy =(parent1.strategy + parent2.strategy) / 2.0
         return AI("", self.group_size - 1, child_strategy)
 
     def _recombine(self, population) -> List[AI]:
         children = []
-        children_count = int((self.population_size - len(population)) * self.child_ratio)         # = 25 (default value)
+        children_count = int((self.population_size - len(population)) * self.child_rate)         # = 25 (default value)
         for child_index in range(children_count):                                                     # build pairs
             child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1])
             children.append(child)
@@ -65,13 +66,14 @@ class Trainer:
     def _mutate(self, population) -> List[AI]:
         mutated_population = []
         for ai in population:
-            mutated_population.append(self._mutate_strategy(ai))
+            self.append = mutated_population.append(self._mutate_strategy(ai))
         return mutated_population
 
     def _add_random_ais(self, population) -> List[AI]:
         missing_ais = self.population_size - len(population)
         population.extend(
-            [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
+            [AI("", self.group_size - 1, [1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])for _ in range(missing_ais)])
+        # [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
         return population
 
     def _find_max_points(self, population):
@@ -80,7 +82,7 @@ class Trainer:
             max_points = max(ai.get_points(), max_points)
         return max_points
 
-    def _find_avg_points(self,population):
+    def _find_avg_points(self, population):
         sum_points = 0
         for ai in population:
             sum_points += ai.get_points()
@@ -88,16 +90,22 @@ class Trainer:
 
     def _compute_next_generation(self, population) -> List[AI]:
         population = self._select(population)
+        best_ais = population[:int(self.population_size*self.saved_ais_rate)]
+        self._save_best_ais(best_ais)
         population = self._recombine(population)
         population = self._mutate(population)
         population = self._add_random_ais(population)
         population = self._group(population)
         population = self._rank(population)
-        return population
+        return populationf
 
     def _build_initial_population(self) -> List[AI]:
-        return [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(self.population_size)]
-        # return [AI("", self.group_size - 1,np.zeros((self.group_size * 9,))) for _ in range(self.population_size)]
+        # return [AI("", self.group_size - 1, np.random.rand(self.group_size * 9), random.randint(-1, 1))for _ in
+        # range(self.population_size)]  # fill in strategy
+        return [AI("", self.group_size - 1, [1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5], [0, 0, 0, 0, 0, 0, -6, 0, -6, 0])
+                for _ in range(self.population_size)]
+        # return [AI("", self.group_size - 1, np.zeros((self.group_size * 9,)), random.randint(-1, 1)) for _ in
+        # range(self.population_size)]
 
     def train(self) -> AI:
         population = self._build_initial_population()
@@ -108,13 +116,24 @@ class Trainer:
             new_population = self._compute_next_generation(population)
             max_points = self._find_max_points(new_population)
             new_avg_points = self._find_avg_points(new_population)
-            if new_avg_points > avg_points or self.accept_all_generations:
+            if new_avg_points > avg_points:
                 avg_points = new_avg_points
                 population = new_population
             print("Generation: {} \t Max: {} \t Avg: {}".format(generation, max_points, avg_points))
         print("evolution finished")
         best_ai = population[0]
         return best_ai
+
+    def _save_best_ais(self, best_ais):
+        np.save("best_ais_file", best_ais, allow_pickle=True, fix_imports=True)      # where is the file saved?
+        # os.system("cmd")
+        # best_ais = [best_ais]
+        # pickle.dump(best_ais, open("best_ais.dat", "wb"))        # todo test function -> doesn't work
+
+    def _load_best_ais(self):                                # todo apply function
+        # best_ais = np.load(best_ais_file.npy)
+        best_ais = np.load("best_ais_file")
+        return best_ais
 
 
 if __name__ == "__main__":
