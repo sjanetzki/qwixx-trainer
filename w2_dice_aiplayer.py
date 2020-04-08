@@ -8,13 +8,13 @@ import random
 class AI(Player):
     def __init__(self, name, opponents, strategy, bias):
         super().__init__(name, opponents)
-        self.strategy = strategy
+        self.linear_factor = strategy
         self.bias = bias
 
-    def _get_sum_situation_(self, situation):
+    def _get_sum_situation_(self, hypothetical_situation):
         situation_quality = 0
-        for index in range(len(situation)):
-            situation_quality += situation[index] * (self.strategy * (self.opponents + 1))[index] + self.bias[index]  # todo: get rid off self_opponents
+        for index in range(len(hypothetical_situation)):
+            situation_quality += hypothetical_situation[index] * (self.linear_factor * (self.opponents + 1))[index] + self.bias[index]  # todo: get rid off self_opponents
         return situation_quality
 
     def get_possibilities_active(self, lst_eyes) -> List[List[CrossPossibility]]:

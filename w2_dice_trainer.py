@@ -7,7 +7,7 @@ from typing import List
 
 
 class Trainer:
-    bodo_strategy = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
+    bodo_linear_factor = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
     bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
 
     def __init__(self, group_size=1, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
@@ -47,10 +47,10 @@ class Trainer:
         return population_ranked[0: int(self.survivor_rate * self.population_size)]     # slice operation
 
     def _mix_strategies(self, parent1, parent2) -> AI:
-        child_strategy = np.array([x / 2 for x in (parent1.strategy + parent2.strategy)])
+        child_linear_factor = np.array([x / 2 for x in (parent1.linear_factor + parent2.linear_factor)])
         child_bias = np.array([x / 2 for x in (parent1.bias + parent2.bias)])
-        assert(len(child_strategy) == len(parent1.strategy) and len(child_strategy) == len(parent2.strategy))
-        return AI("", self.group_size - 1, child_strategy, child_bias)
+        assert(len(child_linear_factor) == len(parent1.linear_factor) and len(child_linear_factor) == len(parent2.linear_factor))
+        return AI("", self.group_size - 1, child_linear_factor, child_bias)
 
     def _recombine(self, population) -> List[AI]:
         children = []
@@ -62,9 +62,9 @@ class Trainer:
         return population
 
     def _mutate_strategy(self, ai) -> AI:
-        for value_index in range(len(ai.strategy)):
+        for value_index in range(len(ai.linear_factor)):
             if random.random() < self.mutation_rate:
-                ai.strategy[value_index] = random.random()
+                ai.linear_factor[value_index] = random.random()
         return ai
 
     def _mutate(self, population) -> List[AI]:
@@ -76,7 +76,7 @@ class Trainer:
     def _add_random_ais(self, population) -> List[AI]:
         missing_ais = self.population_size - len(population)
         population.extend(
-            [AI("", self.group_size - 1, Trainer.bodo_strategy, Trainer.bodo_bias) for _ in range(missing_ais)])
+            [AI("", self.group_size - 1, Trainer.bodo_linear_factor, Trainer.bodo_bias) for _ in range(missing_ais)])
         # [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
         return population
 
@@ -105,8 +105,8 @@ class Trainer:
 
     def _build_initial_population(self) -> List[AI]:
         # return [AI("", self.group_size - 1, np.random.rand(self.group_size * 9), random.randint(-1, 1))for _ in
-        # range(self.population_size)]  # fill in strategy
-        return [AI("", self.group_size - 1, Trainer.bodo_strategy, Trainer.bodo_bias)
+        # range(self.population_size)]  # fill in linear_factor
+        return [AI("", self.group_size - 1, Trainer.bodo_linear_factor, Trainer.bodo_bias)
                 for _ in range(self.population_size)]
         # return [AI("", self.group_size - 1, np.zeros((self.group_size * 9,)), random.randint(-1, 1)) for _ in
         # range(self.population_size)]
