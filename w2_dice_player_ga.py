@@ -73,12 +73,12 @@ class Player(ABC):
                         assert(is_active_player is not None)
                         assert(board.cross(turn, self.completed_lines, is_active_player))
             for parameter_type in range(9):
-                if parameter_type in range(4):
-                    situation_value = board.row_numbers[parameter_type]
-                elif parameter_type == 4:
-                    situation_value = board.penalties
+                if parameter_type % 2 == 0 and parameter_type != 8:
+                    situation_value = board.row_numbers[parameter_type // 2]
+                elif parameter_type != 8:
+                    situation_value = board.row_limits[parameter_type // 2]
                 else:
-                    situation_value = board.row_limits[parameter_type - 5]
+                    situation_value = board.penalties
                 situation[player_count * parameter_type + player_index] = situation_value
         return situation
 
