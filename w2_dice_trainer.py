@@ -11,7 +11,7 @@ class Trainer:
     bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
 
     def __init__(self, group_size=1, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
-                 generations=1000, saved_ais_rate=0.15):
+                 generations=300, saved_ais_rate=0.15):
         self.group_size = group_size
         self.population_size = population_size
         self.survivor_rate = survivor_rate
@@ -117,14 +117,12 @@ class Trainer:
         population = self._build_initial_population()
         population = self._group(population)
         population = self._rank(population)
-        avg_points = float("-inf")
         for generation in range(self.generations):
             new_population = self._compute_next_generation(population)
             max_points = self._find_max_points(new_population)
             new_avg_points = self._find_avg_points(new_population)
-            if new_avg_points > avg_points:
-                avg_points = new_avg_points
-                population = new_population
+            avg_points = new_avg_points
+            population = new_population
             print("Generation: {} \t Max: {} \t Avg: {}".format(generation, max_points, avg_points))
         print("evolution finished")
         best_ai = population[0]
