@@ -2,8 +2,6 @@ from w2_dice_dice import Dice as dice
 from w2_dice_board import Board as board
 from w2_dice_aiplayer import AI as ai
 import numpy as np
-import random
-
 
 
 class Game:

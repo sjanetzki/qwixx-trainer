@@ -44,18 +44,19 @@ class Trainer:
         return ranking
 
     def _select(self, population_ranked) -> List[AI]:
-        return population_ranked[0: int(self.survivor_rate * self.population_size)]     # slice operation
+        return population_ranked[0: int(self.survivor_rate * self.population_size)]  # slice operation
 
     def _mix_strategies(self, parent1, parent2) -> AI:
         child_linear_factor = np.array([x / 2 for x in (parent1.linear_factor + parent2.linear_factor)])
         child_bias = np.array([x / 2 for x in (parent1.bias + parent2.bias)])
-        assert(len(child_linear_factor) == len(parent1.linear_factor) and len(child_linear_factor) == len(parent2.linear_factor))
+        assert (len(child_linear_factor) == len(parent1.linear_factor) and len(child_linear_factor) == len(
+            parent2.linear_factor))
         return AI("", self.group_size - 1, child_linear_factor, child_bias)
 
     def _recombine(self, population) -> List[AI]:
         children = []
-        children_count = int((self.population_size - len(population)) * self.child_rate)         # = 25 (default value)
-        for child_index in range(children_count):                                                     # build pairs
+        children_count = int((self.population_size - len(population)) * self.child_rate)  # = 25 (default value)
+        for child_index in range(children_count):  # build pairs
             child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1])
             children.append(child)
         population.extend(children)

@@ -14,7 +14,8 @@ class AI(Player):
     def _get_sum_situation_(self, hypothetical_situation):
         situation_quality = 0
         for index in range(len(hypothetical_situation)):
-            situation_quality += hypothetical_situation[index] * (self.linear_factor * (self.opponents + 1))[index] + self.bias[index]  # todo: get rid off self_opponents
+            situation_quality += hypothetical_situation[index] * (self.linear_factor * (self.opponents + 1))[index] + \
+                                 self.bias[index]  # todo: get rid off self_opponents
         return situation_quality
 
     def get_possibilities_active(self, lst_eyes) -> List[List[CrossPossibility]]:
@@ -95,4 +96,3 @@ class AI(Player):
     def cross_passive(self, lst_eyes):
         possibilities = self.get_possibilities_passive(lst_eyes)
         return self._find_best_turns(possibilities, False)
-

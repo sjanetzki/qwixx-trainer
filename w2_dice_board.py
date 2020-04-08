@@ -39,7 +39,6 @@ class Board:
         else:
             print("penalties: {}".format(self.penalties))
 
-
     def cross(self, position, completed_lines, is_active_player) -> bool:
         """sets the crosses chosen by the player after checking their validity, returns True if the turn is valid"""
         row = position.row
@@ -98,6 +97,7 @@ class Board:
         else:
             print("F")
             return False
+
 
 class PyGameBoard(Board):
 
@@ -191,7 +191,7 @@ class PyGameBoard(Board):
         screen = pygame.display.set_mode(size)
         if int(x + w) > int(mouse[0]) > x and int(y + h) > int(mouse[1]) > y:
             pygame.draw.rect(screen, ac, (x, y, w, h))
-            if click[0] == 1 and action != None:
+            if click[0] == 1 and action is not None:
                 action()
             else:
                 pygame.draw.rect(screen, ic, (x, y, w, h))
