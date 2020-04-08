@@ -65,6 +65,8 @@ class Trainer:
         for value_index in range(len(ai.linear_factor)):
             if random.random() < self.mutation_rate:
                 ai.linear_factor[value_index] = random.random()
+            if random.random() < self.mutation_rate:
+                ai.bias[value_index] = random.random()
         return ai
 
     def _mutate(self, population) -> List[AI]:
