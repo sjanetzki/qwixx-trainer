@@ -80,9 +80,9 @@ class Game:
 # game = Game([human("meep", 2), ai("gans", 2, np.random.randn(27), 0), player("glueck", 2)], 3)
 # game = Game([ai("alice", 2, np.random.randn(27), 0), ai("bob", 2, np.random.randn(27), 0),
 #              ai("cia", 2, np.random.randn(27), 0)], 3)
-game = Game([ai("alice", 2, np.random.randn(27)),
-             ai("bob", 2, np.random.randn(27)),
-             ai("cia", 2, np.random.randn(27))])
+game = Game([ai("alice", 2, np.random.randn(27), np.random.randn(27)),
+             ai("bob", 2, np.random.randn(27), np.random.randn(27)),
+             ai("cia", 2, np.random.randn(27), np.random.randn(27))])
 
 
 def test():

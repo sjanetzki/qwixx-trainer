@@ -6,13 +6,15 @@ import random
 
 
 class AI(Player):
-    def __init__(self, name, opponents, strategy, bias=random.randint(-1, 1)):
+    def __init__(self, name, opponents, strategy, bias):
         super().__init__(name, opponents)
         self.strategy = strategy
         self.bias = bias
 
     def _get_sum_situation_(self, situation):
         # return np.square(np.dot(self.strategy * (self.opponents + 1), situation)) + self.bias # will it work?, square or multiply with a second 'strategy'?
+        if len(self.strategy) > 9:
+            a = 3
         return np.dot(self.strategy * (self.opponents + 1), situation)
 
     def get_possibilities_active(self, lst_eyes) -> List[List[CrossPossibility]]:
