@@ -118,12 +118,14 @@ class PyGameBoard(Board):
         red = (255, 103, 115)
         light_yellow = (248, 220, 127)
         yellow = (251, 212, 85)
+        yellow_vibrant = (255, 195, 0)
         light_green = (184, 221, 196)
         green = (142, 220, 166)
         light_blue = (197, 220, 242)
         blue = (149, 198, 248)
-        green_vibrant = (126, 199, 0)
-        red_vibrant = (255, 0, 50)
+        blue_vibrant = (0, 129, 255)
+        green_vibrant = (62, 224, 109)
+        red_vibrant = (255, 0, 20)
 
         size = (1216, 650)
         screen = pygame.display.set_mode(size)
@@ -143,31 +145,31 @@ class PyGameBoard(Board):
 
             pygame.draw.rect(screen, light_red, [32, 32, 1152, 118], 0)
             for field in range(0, 11):
-                pygame.draw.rect(screen, red, [50 + 92 * field, 50, 80, 80], 0)
+                self.button(50 + 92 * field, 50, 80, 80, red, red_vibrant, screen)
                 text = font.render("{}".format(int(field + 2)), True, white)
                 screen.blit(text, [80 + 92 * field, 70])
-            pygame. draw.circle(screen, red, [1112, 90], 36, 0)
+            self.button(1112, 90, 72, 72, red, red_vibrant, screen, True)
 
             pygame.draw.rect(screen, light_yellow, [32, 158, 1152, 118], 0)
             for field in range(0, 11):
-                pygame.draw.rect(screen, yellow, [50 + 92 * field, 50 * 2 + 76, 80, 80], 0)
+                self.button(50 + 92 * field, 50 * 2 + 76, 80, 80, yellow, yellow_vibrant, screen)
                 text = font.render("{}".format(int(field + 2)), True, white)
                 screen.blit(text, [80 + 92 * field, 70 * 2 + 56])
-            pygame. draw.circle(screen, yellow, [1112, 90 * 2 + 36], 36, 0)
+            self.button(1112, 90 * 2 + 36, 72, 72, yellow, yellow_vibrant, screen, True)
 
             pygame.draw.rect(screen, light_green, [32, 284, 1152, 118], 0)
             for field in range(0, 11):
-                pygame.draw.rect(screen, green, [50 + 92 * field, 50 * 3 + 76 * 2, 80, 80], 0)
+                self.button(50 + 92 * field, 50 * 3 + 76 * 2, 80, 80, green, green_vibrant, screen)
                 text = font.render("{}".format(int(12 - field)), True, white)
                 screen.blit(text, [80 + 92 * field, 70 * 3 + 56 * 2])
-            pygame. draw.circle(screen, green, [1112, 90 * 3 + 36 * 2], 36, 0)
+            self.button(1112, 90 * 3 + 36 * 2, 72, 72, green, green_vibrant, screen, True)
 
             pygame.draw.rect(screen, light_blue, [32, 410, 1152, 118], 0)
             for field in range(0, 11):
-                pygame.draw.rect(screen, blue, [50 + 92 * field, 50 * 4 + 76 * 3, 80, 80], 0)
+                self.button(50 + 92 * field, 50 * 4 + 76 * 3, 80, 80, blue, blue_vibrant, screen)
                 text = font.render("{}".format(int(12 - field)), True, white)
                 screen.blit(text, [80 + 92 * field, 70 * 4 + 56 * 3])
-            pygame. draw.circle(screen, blue, [1112, 90 * 4 + 36 * 3], 36, 0)
+            self.button(1112,90 * 4 + 36 * 3, 72, 72, blue, blue_vibrant, screen, True)
 
             for row in range(4):
                 text = lock.render("*", True, white)
@@ -175,27 +177,30 @@ class PyGameBoard(Board):
 
             pygame.draw.rect(screen, light_grey, [784, 536, 400, 60], 0)
             for field in range(1, 5):
-                pygame.draw.rect(screen, dark_grey, [970 + 10 * field + 40 * (field - 1), 546, 40, 40], 0)
+                self.button(970 + 10 * field + 40 * (field - 1), 546, 40, 40, dark_grey, black, screen)
             text = font.render("penalties", True, dark_grey)
             screen.blit(text, [800, 546])
-            self.button(980, 567, 40, 40, light_grey, red_vibrant, 1)
             pygame.display.flip()
-            # print(mouse)
             clock.tick(60)
         pygame.quit()
 
-    def button(self, x, y, w, h, ic, ac, action=None):
+    def button(self, x, y, w, h, inactive_color, active_color, screen, circle=False, action=None):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-        size = (1216, 650)
-        screen = pygame.display.set_mode(size)
         if int(x + w) > int(mouse[0]) > x and int(y + h) > int(mouse[1]) > y:
-            pygame.draw.rect(screen, ac, (x, y, w, h))
+            if circle:
+                pygame.draw.circle(screen, active_color, [x, y], w // 2, 0)
+            else:
+                pygame.draw.rect(screen, active_color, (x, y, w, h))
             if click[0] == 1 and action is not None:
                 action()
+        else:
+            if circle:
+                pygame.draw.circle(screen, inactive_color, [x, y], w // 2, 0)
             else:
-                pygame.draw.rect(screen, ic, (x, y, w, h))
-            print(mouse)
+                pygame.draw.rect(screen, inactive_color, (x, y, w, h))
+
+
 
    
 def test():
@@ -351,6 +356,6 @@ def test():
 
 
 if __name__ == "__main__":
-    board = PyGameBoard
-    board.show_background(board)
+    board = PyGameBoard()
+    board.show_background()
 
