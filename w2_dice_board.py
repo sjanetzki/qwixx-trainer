@@ -101,34 +101,38 @@ class Board:
 
 class PyGameBoard(Board):
 
+    black = (0, 0, 0)  # upper- or lowercase letters?
+    dark_grey = (120, 120, 120)
+    light_grey = (215, 215, 215)
+    white = (255, 255, 255)
+    light_red = (255, 156, 163)
+    red = (255, 103, 115)
+    light_yellow = (248, 220, 127)
+    yellow = (251, 212, 85)
+    yellow_vibrant = (255, 195, 0)
+    light_green = (184, 221, 196)
+    green = (142, 220, 166)
+    light_blue = (197, 220, 242)
+    blue = (149, 198, 248)
+    blue_vibrant = (0, 129, 255)
+    green_vibrant = (62, 224, 109)
+    red_vibrant = (255, 0, 20)
+    
     def __init__(self):
-        pass
+        size = (1216, 650)
+        self.screen = pygame.display.set_mode(size)
+        self.mouse_down = False
+        self.crosses_red = set()
+        self.crosses_yellow = set()
+        self.crosses_green = set()
+        self.crosses_blue = set()
+        self.penalties = 0
 
     def show_background(self) -> None:
         """shows board as a with pygame functions"""
         pygame.init()
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-
-        black = (0, 0, 0)                      # upper- or lowercase letters?
-        dark_grey = (120, 120, 120)
-        light_grey = (215, 215, 215)
-        white = (255, 255, 255)
-        light_red = (255, 156, 163)
-        red = (255, 103, 115)
-        light_yellow = (248, 220, 127)
-        yellow = (251, 212, 85)
-        yellow_vibrant = (255, 195, 0)
-        light_green = (184, 221, 196)
-        green = (142, 220, 166)
-        light_blue = (197, 220, 242)
-        blue = (149, 198, 248)
-        blue_vibrant = (0, 129, 255)
-        green_vibrant = (62, 224, 109)
-        red_vibrant = (255, 0, 20)
-
-        size = (1216, 650)
-        screen = pygame.display.set_mode(size)
 
         pygame.display.set_caption("Qwixx Board")
         done = False
@@ -139,221 +143,107 @@ class PyGameBoard(Board):
                 if event.type == pygame.QUIT:  # If user clicked close
                     done = True  # Flag that we are done so we exit this loop
 
-            screen.fill(white)
+            self.screen.fill(PyGameBoard.white)
             font = pygame.font.SysFont('letters for learners', 36, True, False)
             lock = pygame.font.SysFont('letters for learners', 64, True, False)
 
-            pygame.draw.rect(screen, light_red, [32, 32, 1152, 118], 0)
+            pygame.draw.rect(self.screen, PyGameBoard.light_red, [32, 32, 1152, 118], 0)   # box behind the fields
             for field in range(0, 11):
-                self.button(50 + 92 * field, 50, 80, 80, red, red_vibrant, screen)
-                text = font.render("{}".format(int(field + 2)), True, white)
-                screen.blit(text, [80 + 92 * field, 70])
-            self.button(1112, 90, 72, 72, red, red_vibrant, screen, True)
+                self.button(50 + 92 * field, 50, 80, 80, PyGameBoard.red, PyGameBoard.red_vibrant)
+                text = font.render("{}".format(int(field + 2)), True, PyGameBoard.white)
+                self.screen.blit(text, [80 + 92 * field, 70])
+            self.button(1112, 90, 72, 72, PyGameBoard.red, PyGameBoard.red_vibrant, True)
 
-            pygame.draw.rect(screen, light_yellow, [32, 158, 1152, 118], 0)
+            pygame.draw.rect(self.screen, PyGameBoard.light_yellow, [32, 158, 1152, 118], 0)
             for field in range(0, 11):
-                self.button(50 + 92 * field, 50 * 2 + 76, 80, 80, yellow, yellow_vibrant, screen)
-                text = font.render("{}".format(int(field + 2)), True, white)
-                screen.blit(text, [80 + 92 * field, 70 * 2 + 56])
-            self.button(1112, 90 * 2 + 36, 72, 72, yellow, yellow_vibrant, screen, True)
+                self.button(50 + 92 * field, 50 * 2 + 76, 80, 80, PyGameBoard.yellow, PyGameBoard.yellow_vibrant)
+                text = font.render("{}".format(int(field + 2)), True, PyGameBoard.white)
+                self.screen.blit(text, [80 + 92 * field, 70 * 2 + 56])
+            self.button(1112, 90 * 2 + 36, 72, 72, PyGameBoard.yellow, PyGameBoard.yellow_vibrant, True)
 
-            pygame.draw.rect(screen, light_green, [32, 284, 1152, 118], 0)
+            pygame.draw.rect(self.screen, PyGameBoard.light_green, [32, 284, 1152, 118], 0)
             for field in range(0, 11):
-                self.button(50 + 92 * field, 50 * 3 + 76 * 2, 80, 80, green, green_vibrant, screen)
-                text = font.render("{}".format(int(12 - field)), True, white)
-                screen.blit(text, [80 + 92 * field, 70 * 3 + 56 * 2])
-            self.button(1112, 90 * 3 + 36 * 2, 72, 72, green, green_vibrant, screen, True)
+                self.button(50 + 92 * field, 50 * 3 + 76 * 2, 80, 80, PyGameBoard.green, PyGameBoard.green_vibrant)
+                text = font.render("{}".format(int(12 - field)), True, PyGameBoard.white)
+                self.screen.blit(text, [80 + 92 * field, 70 * 3 + 56 * 2])
+            self.button(1112, 90 * 3 + 36 * 2, 72, 72, PyGameBoard.green, PyGameBoard.green_vibrant, True)
 
-            pygame.draw.rect(screen, light_blue, [32, 410, 1152, 118], 0)
+            pygame.draw.rect(self.screen, PyGameBoard.light_blue, [32, 410, 1152, 118], 0)
             for field in range(0, 11):
-                self.button(50 + 92 * field, 50 * 4 + 76 * 3, 80, 80, blue, blue_vibrant, screen)
-                text = font.render("{}".format(int(12 - field)), True, white)
-                screen.blit(text, [80 + 92 * field, 70 * 4 + 56 * 3])
-            self.button(1112,90 * 4 + 36 * 3, 72, 72, blue, blue_vibrant, screen, True)
+                self.button(50 + 92 * field, 50 * 4 + 76 * 3, 80, 80, PyGameBoard.blue, PyGameBoard.blue_vibrant)
+                text = font.render("{}".format(int(12 - field)), True, PyGameBoard.white)
+                self.screen.blit(text, [80 + 92 * field, 70 * 4 + 56 * 3])
+            self.button(1112, 90 * 4 + 36 * 3, 72, 72, PyGameBoard.blue, PyGameBoard.blue_vibrant,True)
 
             for row in range(4):
-                text = lock.render("*", True, white)
-                screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
+                text = lock.render("*", True, PyGameBoard.white)
+                self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
 
-            pygame.draw.rect(screen, light_grey, [784, 536, 400, 60], 0)
+            pygame.draw.rect(self.screen, PyGameBoard.light_grey, [784, 536, 400, 60], 0)
             for field in range(1, 5):
-                self.button(970 + 10 * field + 40 * (field - 1), 546, 40, 40, dark_grey, black, screen)
-            text = font.render("penalties", True, dark_grey)
-            screen.blit(text, [800, 546])
+                self.button(970 + 10 * field + 40 * (field - 1), 546, 40, 40, PyGameBoard.dark_grey, PyGameBoard.black)
+            text = font.render("penalties", True, PyGameBoard.dark_grey)
+            self.screen.blit(text, [800, 546])
             pygame.display.flip()
             clock.tick(60)
         pygame.quit()
 
-    def button(self, x, y, w, h, inactive_color, active_color, screen, circle=False, action=None):
+    def button(self, x, y, w, h, inactive_color, active_color, circle=False):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-        if int(x + w) > int(mouse[0]) > x and int(y + h) > int(mouse[1]) > y:
+        if click[0] == 0:
+            self.mouse_down = False
+        if x < mouse[0] < x + w and y < mouse[1] < y + h:
             if circle:
-                pygame.draw.circle(screen, active_color, [x, y], w // 2, 0)
+                pygame.draw.circle(self.screen, active_color, [x, y], w // 2, 0)
             else:
-                pygame.draw.rect(screen, active_color, (x, y, w, h))
-            if click[0] == 1 and action is not None:
-                action()
+                pygame.draw.rect(self.screen, active_color, (x, y, w, h))
+            if click[0] == 1:
+                self.click_button(x, active_color)
         else:
+            eyes = PyGameBoard.convert_coordinates_to_eyes(active_color, x)
+            if active_color == PyGameBoard.red_vibrant and eyes in self.crosses_red:
+                inactive_color = active_color
+            if active_color == PyGameBoard.yellow_vibrant and eyes in self.crosses_yellow:
+                inactive_color = active_color
+            if active_color == PyGameBoard.green_vibrant and eyes in self.crosses_green:
+                inactive_color = active_color
+            if active_color == PyGameBoard.blue_vibrant and eyes in self.crosses_blue:
+                inactive_color = active_color
             if circle:
-                pygame.draw.circle(screen, inactive_color, [x, y], w // 2, 0)
+                pygame.draw.circle(self.screen, inactive_color, [x, y], w // 2, 0)
             else:
-                pygame.draw.rect(screen, inactive_color, (x, y, w, h))
+                pygame.draw.rect(self.screen, inactive_color, (x, y, w, h))
 
+    def click_button(self, x, active_color) -> bool:  # comparable to 'cross()'
+        """sets a cross chosen by the player"""
+        if self.mouse_down: return False
+        self.mouse_down = True
+        mouse = pygame.mouse.get_pos()
+        row = active_color
+        eyes = PyGameBoard.convert_coordinates_to_eyes(row, x)
 
+        if eyes is not None:
+            if row == PyGameBoard.red_vibrant:
+                self.crosses_red.add(eyes)
+            if row == PyGameBoard.yellow_vibrant:
+                self.crosses_yellow.add(eyes)
+            if row == PyGameBoard.green_vibrant:
+                self.crosses_green.add(eyes)
+            if row == PyGameBoard.blue_vibrant:
+                self.crosses_blue.add(eyes)
 
-   
-def test():
-    """tests whether the board is working right or not"""
+        if row == PyGameBoard.black:
+            self.penalties += 1  # todo später schöner
 
-    board = Board()
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  7  8  9 10 11 12  0")
-    print("yellow:  2  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 0")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((0, 6), [False, False, True, False]))
-    print("expected: True")
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  x  7  8  9 10 11 12  0")
-    print("yellow:  2  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 0")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((3, 14), [False, False, False, True]))
-    print("")
-    print("expected result:")
-    print("False")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((-3, 12), [False, False, True, False]))
-    print("")
-    print("expected result: ")
-    print("False")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((1, 6), [False, True, True, False]))
-    print("")
-    print("expected result : ")
-    print("False")                   # Bedingungen nicht erfüllt
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.calculate_points())
-    print("")
-    print("expected result: ")
-    print("1")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((0, 7), [False, False, True, False]))
-    print("expected: True")
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  x  8  9 10 11 12  0")
-    print("yellow:  2  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 0")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((0, 9), [False, False, True, False]))
-    print("expected: True")
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  7  8  x 10 11 12  0")
-    print("yellow:  2  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 0")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((1, 2), [False, False, True, False]))
-    print("expected: True")
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  7  8  x 10 11 12  0")
-    print("yellow:  x  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 0")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((4, 0), [False, False, True, False]))
-
-    print(board.calculate_points())
-    print("")
-    print("expected result: ")
-    print("2")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((1, 2), [False, False, True, False]))      # set cross on cross
-    print("expected: False")
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  7  8  x 10 11 12  0")
-    print("yellow:  x  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 1")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((0, 2), [False, False, True, False]))      # set cross on the left of another cross
-    print("expected: False")
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  7  8  x 10 11 12  0")
-    print("yellow:  x  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 1")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((4, 1), [False, False, True, False]))
-
-    print(board.calculate_points())
-    print("")
-    print("expected result: ")
-    print("-3")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.cross((0, 10), [False, False, True, False]))
-    print("expected: True")
-
-    print(board.cross((0, 11), [False, False, True, False]))
-    print("expected: True")
-
-    print(board.cross((0, 12), [False, False, True, False]))
-    print("expected: True")
-
-    board.show()
-    print("")
-    print("expected result: ")
-    print("red   :  2  3  4  5  6  7  8  9 10 11 12  x")
-    print("yellow:  x  3  4  5  6  7  8  9 10 11 12  0")
-    print("green : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("blue  : 12 11 10  9  8  7  6  5  4  3  2  0")
-    print("penalties: 2")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(board.calculate_points())
-    print("")
-    print("expected result: ")
-    print("19")
-    print("-----------------------------------------------------------------------------------------------------------")
-
+    @staticmethod
+    def convert_coordinates_to_eyes(row, x):
+        eyes = None
+        if row in (PyGameBoard.red_vibrant, PyGameBoard.yellow_vibrant):
+            eyes = ((x - 50) // 92) + 2             # + 2 because fields in index form 0 -11 -> 2 - 13
+        elif row in (PyGameBoard.green_vibrant, PyGameBoard.blue_vibrant):
+            eyes = 12 - ((x - 50) // 92)             # fields originally in index form 0 -11 -> 12 - 1
+        return eyes
 
 if __name__ == "__main__":
     board = PyGameBoard()
