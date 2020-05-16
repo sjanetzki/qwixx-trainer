@@ -99,7 +99,7 @@ class Board:
             return False
 
 
-class PyGameBoard(Board):
+class PyGameBoard(object):
 
     black = (0, 0, 0)  # upper- or lowercase letters?
     dark_grey = (120, 120, 120)
@@ -117,7 +117,7 @@ class PyGameBoard(Board):
     blue_vibrant = (0, 129, 255)
     green_vibrant = (62, 224, 109)
     red_vibrant = (255, 0, 20)
-    
+
     def __init__(self):
         size = (1216, 650)
         self.screen = pygame.display.set_mode(size)
@@ -147,50 +147,33 @@ class PyGameBoard(Board):
             font = pygame.font.SysFont('letters for learners', 36, True, False)
             lock = pygame.font.SysFont('letters for learners', 64, True, False)
 
-            pygame.draw.rect(self.screen, PyGameBoard.light_red, [32, 32, 1152, 118], 0)   # box behind the fields
-            for field in range(0, 11):
-                self.button(50 + 92 * field, 50, 80, 80, PyGameBoard.red, PyGameBoard.red_vibrant)
-                text = font.render("{}".format(int(field + 2)), True, PyGameBoard.white)
-                self.screen.blit(text, [80 + 92 * field, 70])
-            self.button(1112, 90, 72, 72, PyGameBoard.red, PyGameBoard.red_vibrant, True)
-
-            pygame.draw.rect(self.screen, PyGameBoard.light_yellow, [32, 158, 1152, 118], 0)
-            for field in range(0, 11):
-                self.button(50 + 92 * field, 50 * 2 + 76, 80, 80, PyGameBoard.yellow, PyGameBoard.yellow_vibrant)
-                text = font.render("{}".format(int(field + 2)), True, PyGameBoard.white)
-                self.screen.blit(text, [80 + 92 * field, 70 * 2 + 56])
-            self.button(1112, 90 * 2 + 36, 72, 72, PyGameBoard.yellow, PyGameBoard.yellow_vibrant, True)
-
-            pygame.draw.rect(self.screen, PyGameBoard.light_green, [32, 284, 1152, 118], 0)
-            for field in range(0, 11):
-                self.button(50 + 92 * field, 50 * 3 + 76 * 2, 80, 80, PyGameBoard.green, PyGameBoard.green_vibrant)
-                text = font.render("{}".format(int(12 - field)), True, PyGameBoard.white)
-                self.screen.blit(text, [80 + 92 * field, 70 * 3 + 56 * 2])
-            self.button(1112, 90 * 3 + 36 * 2, 72, 72, PyGameBoard.green, PyGameBoard.green_vibrant, True)
-
-            pygame.draw.rect(self.screen, PyGameBoard.light_blue, [32, 410, 1152, 118], 0)
-            for field in range(0, 11):
-                self.button(50 + 92 * field, 50 * 4 + 76 * 3, 80, 80, PyGameBoard.blue, PyGameBoard.blue_vibrant)
-                text = font.render("{}".format(int(12 - field)), True, PyGameBoard.white)
-                self.screen.blit(text, [80 + 92 * field, 70 * 4 + 56 * 3])
-            self.button(1112, 90 * 4 + 36 * 3, 72, 72, PyGameBoard.blue, PyGameBoard.blue_vibrant,True)
-
             for row in range(4):
+                inactive_color, background_color, active_color = PyGameBoard.convert_row_to_color(row)
+                pygame.draw.rect(self.screen, background_color, [32, 32 + 126 * row, 1152, 118], 0)   # box behind the buttons
+                for eyes in range(0, 11):
+                    self.button(eyes, 80, 80, inactive_color, active_color)
+                    text = font.render("{}".format(int(eyes + 2)), True, PyGameBoard.white)
+                    if row < 2:
+                        self.screen.blit(text, [80 + 92 * eyes, 126 * row + 70])
+                    else:
+                        self.screen.blit(text, [80 + 92 * (10 - eyes), 126 * row + 70])
+                self.button(12, 72, 72, inactive_color, active_color, True)
                 text = lock.render("*", True, PyGameBoard.white)
                 self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
 
             pygame.draw.rect(self.screen, PyGameBoard.light_grey, [784, 536, 400, 60], 0)
-            for field in range(1, 5):
-                self.button(970 + 10 * field + 40 * (field - 1), 546, 40, 40, PyGameBoard.dark_grey, PyGameBoard.black)
+            for eyes in range(1, 5):
+                self.button(eyes, 40, 40, PyGameBoard.dark_grey, PyGameBoard.black)
             text = font.render("penalties", True, PyGameBoard.dark_grey)
             self.screen.blit(text, [800, 546])
             pygame.display.flip()
             clock.tick(60)
         pygame.quit()
 
-    def button(self, x, y, w, h, inactive_color, active_color, circle=False):
+    def button(self,eyes, w, h, inactive_color, active_color, circle=False):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
+        x, y = PyGameBoard.convert_eyes_to_coordinates(PyGameBoard.convert_color_to_row(active_color), eyes, circle)
         if click[0] == 0:
             self.mouse_down = False
 
@@ -212,7 +195,7 @@ class PyGameBoard(Board):
                 inactive_color = active_color
             if active_color == PyGameBoard.blue_vibrant and eyes in self.crosses_blue:
                 inactive_color = active_color
-            if active_color == PyGameBoard.black and eyes < self.penalties:
+            if active_color == PyGameBoard.black and eyes <= self.penalties:
                 inactive_color = active_color
 
             if circle:
@@ -238,7 +221,7 @@ class PyGameBoard(Board):
             if row == PyGameBoard.blue_vibrant:
                 self.crosses_blue.add(eyes)
 
-        if row == PyGameBoard.black and eyes == self.penalties:
+        if row == PyGameBoard.black and eyes - 1 == self.penalties:
             self.penalties += 1
 
     @staticmethod
@@ -248,14 +231,50 @@ class PyGameBoard(Board):
 
     @staticmethod
     def convert_coordinates_to_eyes(row, x):
-        eyes = None
         if row in (PyGameBoard.red_vibrant, PyGameBoard.yellow_vibrant):
-            eyes = ((x - 50) // 92) + 2  # + 2 because fields in index form 0 -11 -> 2 - 13
+            return ((x - 50) // 92) + 2  # + 2 because eyes in index from 0 -11 -> 2 - 13
         elif row in (PyGameBoard.green_vibrant, PyGameBoard.blue_vibrant):
-            eyes = 12 - ((x - 50) // 92)  # fields originally in index form 0 -11 -> 12 - 1
+            return 12 - ((x - 50) // 92)  # eyes originally in index from 0 -11 -> 12 - 1
         else:
-            eyes = ((x - 970) // 50)
-        return eyes
+            return (x - 930) // 50
+
+    @staticmethod
+    def convert_eyes_to_coordinates(row, eyes, circle):
+        assert(row in range(5))
+        if circle:
+            return 1112, (90 * (row + 1) + 36 * row)
+        if row < 2:
+            return (50 + 92 * eyes), (50 * (row + 1) + 76 * row)    # x, y
+        if row < 4:
+            return (50 + 92 * (10 - eyes)), (50 * (row + 1) + 76 * row) # todo why 10 and not 12?
+        return (930 + 50 * eyes), 546
+
+    @staticmethod
+    def convert_color_to_row(color):
+        if color == PyGameBoard.red_vibrant:
+            return 0
+        if color == PyGameBoard.yellow_vibrant:
+            return 1
+        if color == PyGameBoard.green_vibrant:
+            return 2
+        if color == PyGameBoard.blue_vibrant:
+            return 3
+        if color == PyGameBoard.black:
+            return 4
+
+    @staticmethod
+    def convert_row_to_color(row):
+        # inactive, background, active
+        if row == 0:
+            return PyGameBoard.red, PyGameBoard.light_red, PyGameBoard.red_vibrant
+        if row == 1:
+            return PyGameBoard.yellow, PyGameBoard.light_yellow, PyGameBoard.yellow_vibrant
+        if row == 2:
+            return PyGameBoard.green, PyGameBoard.light_green, PyGameBoard.green_vibrant
+        if row == 3:
+            return PyGameBoard.blue, PyGameBoard.light_blue, PyGameBoard.blue_vibrant
+        if row == 4:
+            return PyGameBoard.light_grey, PyGameBoard.dark_grey, PyGameBoard.black
 
 if __name__ == "__main__":
     board = PyGameBoard()
