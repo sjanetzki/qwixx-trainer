@@ -193,7 +193,9 @@ class PyGameBoard(Board):
         click = pygame.mouse.get_pressed()
         if click[0] == 0:
             self.mouse_down = False
-        if x < mouse[0] < x + w and y < mouse[1] < y + h:       # choose color for button at the cursor
+
+        # choose color for button
+        if PyGameBoard.is_mouse_over_button(x, y, w, h, circle, mouse):
             if circle:
                 pygame.draw.circle(self.screen, active_color, [x, y], w // 2, 0)
             else:
@@ -239,16 +241,20 @@ class PyGameBoard(Board):
         if row == PyGameBoard.black and eyes == self.penalties:
             self.penalties += 1
 
+    @staticmethod
+    def is_mouse_over_button(x, y, w, h, circle, mouse) -> bool:
+        return (not circle and x < mouse[0] < x + w and y < mouse[1] < y + h) or \
+                (circle and x - w / 2 < mouse[0] < x + w / 2 and y - h / 2 < mouse[1] < y + h / 2)
 
     @staticmethod
     def convert_coordinates_to_eyes(row, x):
         eyes = None
         if row in (PyGameBoard.red_vibrant, PyGameBoard.yellow_vibrant):
-            eyes = ((x - 50) // 92) + 2             # + 2 because fields in index form 0 -11 -> 2 - 13
+            eyes = ((x - 50) // 92) + 2  # + 2 because fields in index form 0 -11 -> 2 - 13
         elif row in (PyGameBoard.green_vibrant, PyGameBoard.blue_vibrant):
-            eyes = 12 - ((x - 50) // 92)             # fields originally in index form 0 -11 -> 12 - 1
+            eyes = 12 - ((x - 50) // 92)  # fields originally in index form 0 -11 -> 12 - 1
         else:
-            eyes =((x - 970) // 50)
+            eyes = ((x - 970) // 50)
         return eyes
 
 if __name__ == "__main__":
