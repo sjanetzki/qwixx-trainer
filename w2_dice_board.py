@@ -193,14 +193,14 @@ class PyGameBoard(Board):
         click = pygame.mouse.get_pressed()
         if click[0] == 0:
             self.mouse_down = False
-        if x < mouse[0] < x + w and y < mouse[1] < y + h:
+        if x < mouse[0] < x + w and y < mouse[1] < y + h:       # choose color for button at the cursor
             if circle:
                 pygame.draw.circle(self.screen, active_color, [x, y], w // 2, 0)
             else:
                 pygame.draw.rect(self.screen, active_color, (x, y, w, h))
             if click[0] == 1:
                 self.click_button(x, active_color)
-        else:
+        else:   # choose color for button when the cursor isn't pointed at it
             eyes = PyGameBoard.convert_coordinates_to_eyes(active_color, x)
             if active_color == PyGameBoard.red_vibrant and eyes in self.crosses_red:
                 inactive_color = active_color
@@ -210,6 +210,9 @@ class PyGameBoard(Board):
                 inactive_color = active_color
             if active_color == PyGameBoard.blue_vibrant and eyes in self.crosses_blue:
                 inactive_color = active_color
+            if active_color == PyGameBoard.black and eyes < self.penalties:
+                inactive_color = active_color
+
             if circle:
                 pygame.draw.circle(self.screen, inactive_color, [x, y], w // 2, 0)
             else:
@@ -233,8 +236,9 @@ class PyGameBoard(Board):
             if row == PyGameBoard.blue_vibrant:
                 self.crosses_blue.add(eyes)
 
-        if row == PyGameBoard.black:
-            self.penalties += 1  # todo später schöner
+        if row == PyGameBoard.black and eyes == self.penalties:
+            self.penalties += 1
+
 
     @staticmethod
     def convert_coordinates_to_eyes(row, x):
@@ -243,6 +247,8 @@ class PyGameBoard(Board):
             eyes = ((x - 50) // 92) + 2             # + 2 because fields in index form 0 -11 -> 2 - 13
         elif row in (PyGameBoard.green_vibrant, PyGameBoard.blue_vibrant):
             eyes = 12 - ((x - 50) // 92)             # fields originally in index form 0 -11 -> 12 - 1
+        else:
+            eyes =((x - 970) // 50)
         return eyes
 
 if __name__ == "__main__":
