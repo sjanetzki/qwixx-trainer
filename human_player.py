@@ -1,7 +1,7 @@
-from w2_dice_player_ga import Player
+from player import Player
 
 
-class Human(Player):
+class HumanPlayer(Player):
     def help(self):
         print("Do you need help (yes/no)?")
         ans_1 = input()

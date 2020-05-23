@@ -1,5 +1,5 @@
-from w2_dice_aiplayer import AI
-from w2_dice_game import Game
+from ai_player import AiPlayer
+from game import Game
 import numpy as np
 from numpy import random
 import random
@@ -25,14 +25,14 @@ class Trainer:
         self.generations = generations
         self.saved_ais_rate = saved_ais_rate
 
-    def _group(self, population) -> List[AI]:
+    def _group(self, population) -> List[AiPlayer]:
         random.shuffle(population)
         groups = []
         for ai_index in range(0, len(population), self.group_size):
             groups.append(population[ai_index: ai_index + self.group_size])
         return groups
 
-    def _rank(self, groups) -> List[AI]:
+    def _rank(self, groups) -> List[AiPlayer]:
         placement_groups = [[] for _ in range(self.group_size)]
         for group in groups:
             game = Game(group)
@@ -48,18 +48,18 @@ class Trainer:
         assert(len(ranking) == self.population_size)
         return ranking
 
-    def _select(self, population_ranked) -> List[AI]:
+    def _select(self, population_ranked) -> List[AiPlayer]:
         return population_ranked[0: int(self.survivor_rate * self.population_size)]  # slice operation
 
-    def _mix_strategies(self, parent1, parent2) -> AI:
+    def _mix_strategies(self, parent1, parent2) -> AiPlayer:
         child_quadratic_factor = np.array([x / 2 for x in (parent1.quadratic_factor + parent2.quadratic_factor)])
         child_linear_factor = np.array([x / 2 for x in (parent1.linear_factor + parent2.linear_factor)])
         child_bias = np.array([x / 2 for x in (parent1.bias + parent2.bias)])
         assert (len(child_linear_factor) == len(parent1.linear_factor) and len(child_linear_factor) == len(
             parent2.linear_factor))
-        return AI("", self.group_size - 1,child_quadratic_factor, child_linear_factor, child_bias)
+        return AiPlayer("", self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
 
-    def _recombine(self, population) -> List[AI]:
+    def _recombine(self, population) -> List[AiPlayer]:
         children = []
         children_count = int((self.population_size - len(population)) * self.child_rate)  # = 25 (default value)
         for child_index in range(children_count):  # build pairs
@@ -68,7 +68,7 @@ class Trainer:
         population.extend(children)
         return population
 
-    def _mutate_strategy(self, ai) -> AI:
+    def _mutate_strategy(self, ai) -> AiPlayer:
         for value_index in range(len(ai.linear_factor)):
             if random.random() < self.mutation_rate:
                 ai.quadratic_factor[value_index] = random.random()
@@ -78,16 +78,16 @@ class Trainer:
                 ai.bias[value_index] = random.random()
         return ai
 
-    def _mutate(self, population) -> List[AI]:
+    def _mutate(self, population) -> List[AiPlayer]:
         mutated_population = []
         for ai in population:
             self.append = mutated_population.append(self._mutate_strategy(ai))
         return mutated_population
 
-    def _add_random_ais(self, population) -> List[AI]:
+    def _add_random_ais(self, population) -> List[AiPlayer]:
         missing_ais = self.population_size - len(population)
         population.extend(
-            [AI("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor, Trainer.caira_bias) for _ in range(missing_ais)])
+            [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor, Trainer.caira_bias) for _ in range(missing_ais)])
         # [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
         return population
 
@@ -103,7 +103,7 @@ class Trainer:
             sum_points += ai.get_points()
         return sum_points / self.population_size
 
-    def _compute_next_generation(self, population) -> List[AI]:
+    def _compute_next_generation(self, population) -> List[AiPlayer]:
         population = self._select(population)
         best_ais = population[:int(self.population_size*self.saved_ais_rate)]
         self._save_best_ais(best_ais)
@@ -114,15 +114,15 @@ class Trainer:
         population = self._rank(population)
         return population
 
-    def _build_initial_population(self) -> List[AI]:
+    def _build_initial_population(self) -> List[AiPlayer]:
         # return [AI("", self.group_size - 1, np.random.rand(self.group_size * 9), random.randint(-1, 1))for _ in
         # range(self.population_size)]  # fill in linear_factor
-        return [AI("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor, Trainer.caira_bias)
+        return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor, Trainer.caira_bias)
                 for _ in range(self.population_size)]
         # return [AI("", self.group_size - 1, np.zeros((self.group_size * 9,)), random.randint(-1, 1)) for _ in
         # range(self.population_size)]
 
-    def train(self) -> AI:
+    def train(self) -> AiPlayer:
         population = self._build_initial_population()
         population = self._group(population)
         population = self._rank(population)

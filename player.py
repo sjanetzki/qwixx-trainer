@@ -1,7 +1,7 @@
 """This file creates the players of Qwixx, devides them into subclasses (human and AI) and is the place where
  decisions are made."""
 
-from w2_dice_board import Board as brd
+from board import Board
 import numpy as np
 from abc import ABC, abstractmethod
 from copy import deepcopy
@@ -21,18 +21,18 @@ class Player(ABC):
     def __init__(self, name, opponents):
         self.name = name
         self.opponents = opponents
-        self.board = brd()         # eigenes board
+        self.board = Board()         # eigenes board
         self.others = []
         for opponent_index in range(self.opponents):
-            self.others.append(brd())     # lst mit boards der anderen # todo avoid duplicated boards
+            self.others.append(Board())     # lst mit boards der anderen # todo avoid duplicated boards
         self.wish = (-1, -1)
         self.completed_lines = [False, False, False, False]
 
     def start_new_game(self):
-        self.board = brd()
+        self.board = Board()
         self.others = []
         for opponent_index in range(self.opponents):
-            self.others.append(brd())
+            self.others.append(Board())
 
     @abstractmethod
     def cross_active(self, lst_eyes):
@@ -54,9 +54,9 @@ class Player(ABC):
         self.completed_lines = completed_lst
 
     def starting(self):
-        brd.row_limit = np.array([-1, -1, -1, -1])
-        brd.row_number = np.array([0, 0, 0, 0])
-        brd.penalties = 0
+        Board.row_limit = np.array([-1, -1, -1, -1])
+        Board.row_number = np.array([0, 0, 0, 0])
+        Board.penalties = 0
 
     def _get_situation_(self, is_active_player=None, turns=None):
         if turns is None:

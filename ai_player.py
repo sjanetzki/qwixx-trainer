@@ -1,12 +1,10 @@
-from w2_dice_board import Row
-from w2_dice_player_ga import CrossPossibility, Player
+from board import Row
+from player import CrossPossibility, Player
 from typing import List
 import math
-import numpy as np
-import random
 
 
-class AI(Player):
+class AiPlayer(Player):
     def __init__(self, name, opponents, quadratic_factor, linear_factor, bias):
         super().__init__(name, opponents)
         self.quadratic_factor = quadratic_factor
