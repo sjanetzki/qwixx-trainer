@@ -10,6 +10,7 @@ class Row(IntEnum):
     GREEN = 2
     BLUE = 3
 
+
 class Board:
     """does everything that happens on the board"""
     def __init__(self):
@@ -45,27 +46,22 @@ class Board:
         eyes = position.eyes
         if row is None:
             if is_active_player:
-                print("A")
                 return False
             else:
                 return True
         if row not in range(5):
-            print("B")
             return False
         if row == 4:
-            if self.penalties < 5:
+            if self.penalties < 4:
                 self.penalties += 1
                 return True
             else:
-                print("C")
                 return False
 
         # make a cross in a colored row
         if eyes not in range(2, 13):
-            print("G")
             return False
         if completed_lines[row]:                  # Reihe zu -> nichts eintragen
-            print("D")
             print(completed_lines)
             print(row)
             print(self.row_limits)
@@ -77,7 +73,6 @@ class Board:
             cross_last_number = eyes == 2
 
         if self.row_numbers[row] < 5 and cross_last_number:
-            print("E")
             return False
 
         if row in (Row.RED, Row.YELLOW) and self.row_limits[row] < eyes:
@@ -95,11 +90,10 @@ class Board:
                 self.row_numbers[row] += 1
             return True
         else:
-            print("F")
             return False
 
 
-class PyGameBoard(object):
+class PyGameUi(object):
 
     black = (0, 0, 0)  # upper- or lowercase letters?
     dark_grey = (120, 120, 120)
@@ -118,7 +112,7 @@ class PyGameBoard(object):
     green_vibrant = (62, 224, 109)
     red_vibrant = (255, 0, 20)
 
-    def __init__(self):
+    def __init__(self, board):
         size = (1216, 650)
         self.screen = pygame.display.set_mode(size)
         self.mouse_down = False
@@ -127,6 +121,7 @@ class PyGameBoard(object):
         self.crosses_green = set()
         self.crosses_blue = set()
         self.penalties = 0
+        self.board = board
 
     def show_background(self) -> None:
         """shows board as a with pygame functions"""
@@ -143,42 +138,42 @@ class PyGameBoard(object):
                 if event.type == pygame.QUIT:  # If user clicked close
                     done = True  # Flag that we are done so we exit this loop
 
-            self.screen.fill(PyGameBoard.white)
+            self.screen.fill(PyGameUi.white)
             font = pygame.font.SysFont('Comic Sans MS', 28, True, False)
             lock = pygame.font.SysFont('Comic Sans MS', 50, True, False)
 
             for row in range(4):
-                inactive_color, background_color, active_color = PyGameBoard.convert_row_to_color(row)
+                inactive_color, background_color, active_color = PyGameUi.convert_row_to_color(row)
                 pygame.draw.rect(self.screen, background_color, [32, 32 + 126 * row, 1152, 118], 0)   # box behind the buttons
                 for eyes in range(0, 11):
                     self.button(eyes, 80, 80, inactive_color, active_color)
-                    text = font.render("{}".format(int(eyes + 2)), True, PyGameBoard.white)
+                    text = font.render("{}".format(int(eyes + 2)), True, PyGameUi.white)
                     if row < 2:
                         self.screen.blit(text, [80 + 92 * eyes, 126 * row + 70])
                     else:
                         self.screen.blit(text, [80 + 92 * (10 - eyes), 126 * row + 70])
                 self.button(12, 72, 72, inactive_color, active_color, True)
-                text = lock.render("*", True, PyGameBoard.white)
+                text = lock.render("*", True, PyGameUi.white)
                 self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
 
-            pygame.draw.rect(self.screen, PyGameBoard.light_grey, [784, 536, 400, 60], 0)
+            pygame.draw.rect(self.screen, PyGameUi.light_grey, [784, 536, 400, 60], 0)
             for eyes in range(1, 5):
-                self.button(eyes, 40, 40, PyGameBoard.dark_grey, PyGameBoard.black)
-            text = font.render("penalties", True, PyGameBoard.dark_grey)
+                self.button(eyes, 40, 40, PyGameUi.dark_grey, PyGameUi.black)
+            text = font.render("penalties", True, PyGameUi.dark_grey)
             self.screen.blit(text, [800, 546])
             pygame.display.flip()
             clock.tick(60)
         pygame.quit()
 
-    def button(self,eyes, w, h, inactive_color, active_color, circle=False):
+    def button(self, eyes, w, h, inactive_color, active_color, circle=False):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-        x, y = PyGameBoard.convert_eyes_to_coordinates(PyGameBoard.convert_color_to_row(active_color), eyes, circle)
+        x, y = PyGameUi.convert_eyes_to_coordinates(PyGameUi.convert_color_to_row(active_color), eyes, circle)
         if click[0] == 0:
             self.mouse_down = False
 
         # choose color for button
-        if PyGameBoard.is_mouse_over_button(x, y, w, h, circle, mouse):
+        if PyGameUi.is_mouse_over_button(x, y, w, h, circle, mouse):
             if circle:
                 pygame.draw.circle(self.screen, active_color, [x, y], w // 2, 0)
             else:
@@ -186,16 +181,16 @@ class PyGameBoard(object):
             if click[0] == 1:
                 self.click_button(x, active_color)
         else:   # choose color for button when the cursor isn't pointed at it
-            eyes = PyGameBoard.convert_coordinates_to_eyes(active_color, x)
-            if active_color == PyGameBoard.red_vibrant and eyes in self.crosses_red:
+            eyes = PyGameUi.convert_coordinates_to_eyes(active_color, x)
+            if active_color == PyGameUi.red_vibrant and eyes in self.crosses_red:
                 inactive_color = active_color
-            if active_color == PyGameBoard.yellow_vibrant and eyes in self.crosses_yellow:
+            if active_color == PyGameUi.yellow_vibrant and eyes in self.crosses_yellow:
                 inactive_color = active_color
-            if active_color == PyGameBoard.green_vibrant and eyes in self.crosses_green:
+            if active_color == PyGameUi.green_vibrant and eyes in self.crosses_green:
                 inactive_color = active_color
-            if active_color == PyGameBoard.blue_vibrant and eyes in self.crosses_blue:
+            if active_color == PyGameUi.blue_vibrant and eyes in self.crosses_blue:
                 inactive_color = active_color
-            if active_color == PyGameBoard.black and eyes <= self.penalties:
+            if active_color == PyGameUi.black and eyes <= self.penalties:
                 inactive_color = active_color
 
             if circle:
@@ -209,19 +204,19 @@ class PyGameBoard(object):
         self.mouse_down = True
         mouse = pygame.mouse.get_pos()
         row = active_color
-        eyes = PyGameBoard.convert_coordinates_to_eyes(row, x)
+        eyes = PyGameUi.convert_coordinates_to_eyes(row, x)
 
         if eyes is not None:
-            if row == PyGameBoard.red_vibrant:
+            if row == PyGameUi.red_vibrant:
                 self.crosses_red.add(eyes)
-            if row == PyGameBoard.yellow_vibrant:
+            if row == PyGameUi.yellow_vibrant:
                 self.crosses_yellow.add(eyes)
-            if row == PyGameBoard.green_vibrant:
+            if row == PyGameUi.green_vibrant:
                 self.crosses_green.add(eyes)
-            if row == PyGameBoard.blue_vibrant:
+            if row == PyGameUi.blue_vibrant:
                 self.crosses_blue.add(eyes)
 
-        if row == PyGameBoard.black and eyes - 1 == self.penalties:
+        if row == PyGameUi.black and eyes - 1 == self.penalties:
             self.penalties += 1
 
     @staticmethod
@@ -231,9 +226,9 @@ class PyGameBoard(object):
 
     @staticmethod
     def convert_coordinates_to_eyes(row, x):
-        if row in (PyGameBoard.red_vibrant, PyGameBoard.yellow_vibrant):
+        if row in (PyGameUi.red_vibrant, PyGameUi.yellow_vibrant):
             return ((x - 50) // 92) + 2  # + 2 because eyes in index from 0 -11 -> 2 - 13
-        elif row in (PyGameBoard.green_vibrant, PyGameBoard.blue_vibrant):
+        elif row in (PyGameUi.green_vibrant, PyGameUi.blue_vibrant):
             return 12 - ((x - 50) // 92)  # eyes originally in index from 0 -11 -> 12 - 1
         else:
             return (x - 930) // 50
@@ -251,32 +246,32 @@ class PyGameBoard(object):
 
     @staticmethod
     def convert_color_to_row(color):
-        if color == PyGameBoard.red_vibrant:
+        if color == PyGameUi.red_vibrant:
             return 0
-        if color == PyGameBoard.yellow_vibrant:
+        if color == PyGameUi.yellow_vibrant:
             return 1
-        if color == PyGameBoard.green_vibrant:
+        if color == PyGameUi.green_vibrant:
             return 2
-        if color == PyGameBoard.blue_vibrant:
+        if color == PyGameUi.blue_vibrant:
             return 3
-        if color == PyGameBoard.black:
+        if color == PyGameUi.black:
             return 4
 
     @staticmethod
     def convert_row_to_color(row):
         # inactive, background, active
         if row == 0:
-            return PyGameBoard.red, PyGameBoard.light_red, PyGameBoard.red_vibrant
+            return PyGameUi.red, PyGameUi.light_red, PyGameUi.red_vibrant
         if row == 1:
-            return PyGameBoard.yellow, PyGameBoard.light_yellow, PyGameBoard.yellow_vibrant
+            return PyGameUi.yellow, PyGameUi.light_yellow, PyGameUi.yellow_vibrant
         if row == 2:
-            return PyGameBoard.green, PyGameBoard.light_green, PyGameBoard.green_vibrant
+            return PyGameUi.green, PyGameUi.light_green, PyGameUi.green_vibrant
         if row == 3:
-            return PyGameBoard.blue, PyGameBoard.light_blue, PyGameBoard.blue_vibrant
+            return PyGameUi.blue, PyGameUi.light_blue, PyGameUi.blue_vibrant
         if row == 4:
-            return PyGameBoard.light_grey, PyGameBoard.dark_grey, PyGameBoard.black
+            return PyGameUi.light_grey, PyGameUi.dark_grey, PyGameUi.black
 
 if __name__ == "__main__":
-    board = PyGameBoard()
-    board.show_background()
+    pygame_board = PyGameUi()
+    pygame_board.show_background()
 

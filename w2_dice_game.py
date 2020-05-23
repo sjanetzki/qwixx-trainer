@@ -1,6 +1,7 @@
 from w2_dice_dice import Dice as dice
 from w2_dice_board import Board as board
 from w2_dice_aiplayer import AI as ai
+from w2_dice_humanplayer import Human as human
 import numpy as np
 
 
@@ -9,7 +10,6 @@ class Game:
         self.player_count = len(lst_player)
         self.lst_player = lst_player
         self.lst_boards = []
-        self.lst_locks = []
         for index in range(self.player_count):
             self.lst_boards.append(board())
         self.completed_lines = [False, False, False, False]
@@ -75,12 +75,12 @@ class Game:
             round += 1
 
 
-# game = Game([human("meep", 2), ai("gans", 2, np.random.randn(27), 0), player("glueck", 2)], 3)
+game = Game([human("meep", 2), ai("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
 # game = Game([ai("alice", 2, np.random.randn(27), 0), ai("bob", 2, np.random.randn(27), 0),
 #              ai("cia", 2, np.random.randn(27), 0)], 3)
-game = Game([ai("alice", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
-             ai("bob", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
-             ai("cia", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27))])
+# game = Game([ai("alice", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
+            # ai("bob", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
+             # ai("cia", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27))])
 
 
 def test():
