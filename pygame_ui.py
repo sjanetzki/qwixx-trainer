@@ -24,10 +24,7 @@ class PyGameUi(object):
         size = (1216, 650)
         self.screen = pygame.display.set_mode(size)
         self.mouse_down = False
-        self.crosses_red = set()
-        self.crosses_yellow = set()
-        self.crosses_green = set()
-        self.crosses_blue = set()
+        self.crosses_by_color = [set(), set(), set(), set()]
         self.penalties = 0
 
     def show_background(self) -> None:
@@ -86,13 +83,13 @@ class PyGameUi(object):
                 self.click_button(x, active_color)
         else:   # choose color for button when the cursor isn't pointed at it
             eyes = PyGameUi.convert_coordinates_to_eyes(active_color, x)
-            if active_color == PyGameUi.red_vibrant and eyes in self.crosses_red:
+            if active_color == PyGameUi.red_vibrant and eyes in self.crosses_by_color[0]:
                 inactive_color = active_color
-            if active_color == PyGameUi.yellow_vibrant and eyes in self.crosses_yellow:
+            if active_color == PyGameUi.yellow_vibrant and eyes in self.crosses_by_color[1]:
                 inactive_color = active_color
-            if active_color == PyGameUi.green_vibrant and eyes in self.crosses_green:
+            if active_color == PyGameUi.green_vibrant and eyes in self.crosses_by_color[2]:
                 inactive_color = active_color
-            if active_color == PyGameUi.blue_vibrant and eyes in self.crosses_blue:
+            if active_color == PyGameUi.blue_vibrant and eyes in self.crosses_by_color[3]:
                 inactive_color = active_color
             if active_color == PyGameUi.black and eyes <= self.penalties:
                 inactive_color = active_color
@@ -104,21 +101,21 @@ class PyGameUi(object):
 
     def click_button(self, x, active_color) -> bool:  # comparable to 'cross()'
         """sets a cross chosen by the player"""
-        if self.mouse_down: return False
+        if self.mouse_down:
+            return False
         self.mouse_down = True
-        mouse = pygame.mouse.get_pos()
         row = active_color
         eyes = PyGameUi.convert_coordinates_to_eyes(row, x)
 
         if eyes is not None:
             if row == PyGameUi.red_vibrant:
-                self.crosses_red.add(eyes)
+                self.crosses_by_color[0].add(eyes)
             if row == PyGameUi.yellow_vibrant:
-                self.crosses_yellow.add(eyes)
+                self.crosses_by_color[1].add(eyes)
             if row == PyGameUi.green_vibrant:
-                self.crosses_green.add(eyes)
+                self.crosses_by_color[2].add(eyes)
             if row == PyGameUi.blue_vibrant:
-                self.crosses_blue.add(eyes)
+                self.crosses_by_color[3].add(eyes)
 
         if row == PyGameUi.black and eyes - 1 == self.penalties:
             self.penalties += 1

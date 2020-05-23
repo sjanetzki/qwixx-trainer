@@ -1,6 +1,7 @@
 from board import Row
 from player import CrossPossibility, Player
 from typing import List
+from time import sleep
 import math
 
 
@@ -74,6 +75,7 @@ class AiPlayer(Player):
         return best_turns
 
     def cross_active(self, lst_eyes) -> List[CrossPossibility]:
+        sleep(1)
         possibilities = self.get_possibilities_active(lst_eyes)
         return self._find_best_turns(possibilities, True)
 

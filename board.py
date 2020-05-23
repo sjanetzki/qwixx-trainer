@@ -13,9 +13,30 @@ class Row(IntEnum):
 class Board:
     """does everything that happens on the board"""
     def __init__(self):
-        self.row_limits = np.array([1, 1, 13, 13])     # last crossed value in the row
-        self.row_numbers = np.array([0, 0, 0, 0])        # number of crosses in a row
         self.penalties = 0
+        self.crosses_by_color = [set(), set(), set(), set()]
+
+    @property
+    def row_limits(self):
+        row_limits = np.array([1, 1, 13, 13])
+        for color, crosses in enumerate(self.crosses_by_color):
+            if len(crosses) == 0:
+                continue
+            if color in (Row.RED, Row.YELLOW):
+                row_limits[color] = max(crosses)
+            else:
+                row_limits[color] = min(crosses)
+        return row_limits
+
+    def _set_row_limits(self, row, value):
+        self.crosses_by_color[row].add(value)
+
+    @property
+    def row_numbers(self):
+        row_numbers = np.array([0, 0, 0, 0])
+        for color, crosses in enumerate(self.crosses_by_color):
+            row_numbers[color] = len(crosses)
+        return row_numbers
 
     def show(self) -> None:
         """prints the board as a string"""
@@ -75,18 +96,14 @@ class Board:
             return False
 
         if row in (Row.RED, Row.YELLOW) and self.row_limits[row] < eyes:
-            self.row_limits[row] = eyes
-            self.row_numbers[row] += 1
+            self._set_row_limits(row, eyes)
             if cross_last_number:
-                self.row_limits[row] += 1
-                self.row_numbers[row] += 1
+                self._set_row_limits(row, 13)
             return True
         elif row in (Row.GREEN, Row.BLUE) and self.row_limits[row] > eyes:
-            self.row_limits[row] = eyes
-            self.row_numbers[row] += 1
+            self._set_row_limits(row, eyes)
             if cross_last_number:
-                self.row_limits[row] -= 1
-                self.row_numbers[row] += 1
+                self._set_row_limits(row, 1)
             return True
         else:
             return False

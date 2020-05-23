@@ -5,7 +5,6 @@ from board import Board
 import numpy as np
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from time import sleep
 
 
 class CrossPossibility:
@@ -60,17 +59,8 @@ class Player(ABC):
         if self.ui is None:
             return
         self.ui.penalties = self.board.penalties
-        for color, row_limit in enumerate(self.board.row_limits):
-            if color == 0:
-                self.ui.crosses_red = {row_limit}
-            elif color == 1:
-                self.ui.crosses_yellow = {row_limit}
-            elif color == 2:
-                self.ui.crosses_green = {row_limit}
-            else:
-                self.ui.crosses_blue = {row_limit}
+        self.ui.crosses_by_color = self.board.crosses_by_color
         self.ui.show_background()
-        sleep(1)
 
     def _get_situation(self, is_active_player=None, turns=None):
         if turns is None:
