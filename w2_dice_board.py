@@ -35,7 +35,7 @@ class Board:
         print("yellow: {}".format(join_y))
         print("green:  {}".format(join_g))
         print("blue:   {}".format(join_b))
-        if self.penalties == 0:
+        if self.penalties == 0::
             print("penalties: 0")
         else:
             print("penalties: {}".format(self.penalties))
