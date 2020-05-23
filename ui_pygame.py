@@ -30,11 +30,16 @@ class PyGameUi(object):
         self.last_action = None
         self.crosses_by_color = [set(), set(), set(), set()]
         self.penalties = 0
+        self.is_turn_invalid = False
 
     def show_background(self) -> None:
         """shows board as a with pygame functions"""
         pygame.display.set_caption("Qwixx Board")
-        self.screen.fill(PyGameUi.white)
+        if self.is_turn_invalid:
+            self.screen.fill(PyGameUi.red_vibrant)
+        else:
+            self.screen.fill(PyGameUi.white)
+
         font = pygame.font.SysFont('Comic Sans MS', 28, True, False)
         lock = pygame.font.SysFont('Comic Sans MS', 50, True, False)
 
@@ -111,6 +116,7 @@ class PyGameUi(object):
         if self.is_mouse_down or self.last_action is not None:
             return False
         self.is_mouse_down = True
+        self.is_turn_invalid = False
         row = active_color
         eyes = PyGameUi.convert_coordinates_to_eyes(row, x)
 

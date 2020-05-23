@@ -42,6 +42,24 @@ class Game:
         ranking = sorted(ranking, key=lambda x: x[1], reverse=True)
         return ranking
 
+    def make_turn(self, player_index, turn, is_active_player, lst_eyes):
+        is_turn_valid = True
+        for row in range(4):
+            is_turn_valid &= (turn.row == row
+                              and is_active_player
+                              and (lst_eyes[0] + lst_eyes[1] == turn.eyes
+                                   or lst_eyes[0] + lst_eyes[row + 2] == turn.eyes
+                                   or lst_eyes[1] + lst_eyes[row + 2] == turn.eyes)) \
+                             or (turn.row == row
+                                 and not is_active_player
+                                 and lst_eyes[0] + lst_eyes[1] == turn.eyes)
+
+        is_turn_valid &= self.lst_boards[player_index].cross(turn, self.completed_lines, is_active_player)
+
+        assert (is_turn_valid or isinstance(self.lst_player[player_index], HumanPlayer))
+        if not is_turn_valid:
+            self.lst_player[player_index].inform_about_invalid_turn()
+
     def play(self) -> None:
         round = 1
         while True:
@@ -60,16 +78,7 @@ class Game:
                 for player_index in range(self.player_count):
                     turns = turns_per_player[player_index]
                     for turn in turns:
-                        # if turn is not None:
-                        assert (self.lst_boards[player_index].cross(turn, self.completed_lines,
-                                                                    player_index == active_player_index))  # hier x gesetzt
-                        # else:
-                        #     if turns[0] is None:
-                        #         self.lst_player[0].cross_passive(lst_eyes)
-                        #     elif turns[1] is None:
-                        #         self.lst_player[1].cross_passive(lst_eyes)
-                        #     else:
-                        #         self.lst_player[2].cross_active(lst_eyes)           # hier müsste eine Schleife hin
+                        self.make_turn(player_index, turn, player_index == active_player_index, lst_eyes)
                 for player_index in range(self.player_count):
                     self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
                 if self.is_completed():

@@ -55,6 +55,10 @@ class Player(ABC):
                 self.others[player_index - 1] = boards[player_index]
         self.completed_lines = completed_lst
 
+    def inform_about_invalid_turn(self):
+        assert(self.ui is not None)
+        self.ui.is_turn_invalid = True
+
     def _update_ui(self):
         if self.ui is None:
             return
