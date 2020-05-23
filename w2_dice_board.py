@@ -144,8 +144,8 @@ class PyGameBoard(object):
                     done = True  # Flag that we are done so we exit this loop
 
             self.screen.fill(PyGameBoard.white)
-            font = pygame.font.SysFont('letters for learners', 36, True, False)
-            lock = pygame.font.SysFont('letters for learners', 64, True, False)
+            font = pygame.font.SysFont('Comic Sans MS', 28, True, False)
+            lock = pygame.font.SysFont('Comic Sans MS', 50, True, False)
 
             for row in range(4):
                 inactive_color, background_color, active_color = PyGameBoard.convert_row_to_color(row)
