@@ -37,7 +37,7 @@ class PyGameUi(object):
         done = False
         clock = pygame.time.Clock()
         while not done:
-
+            done = True
             for event in pygame.event.get():  # User did something
                 if event.type == pygame.QUIT:  # If user clicked close
                     done = True  # Flag that we are done so we exit this loop
@@ -67,7 +67,7 @@ class PyGameUi(object):
             self.screen.blit(text, [800, 546])
             pygame.display.flip()
             clock.tick(60)
-        pygame.quit()
+        # pygame.quit()
 
     def button(self, eyes, w, h, inactive_color, active_color, circle=False):
         mouse = pygame.mouse.get_pos()

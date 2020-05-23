@@ -2,6 +2,7 @@ from dice import Dice
 from board import Board
 from ai_player import AiPlayer
 from human_player import HumanPlayer
+from pygame_ui import PyGameUi
 import numpy as np
 
 
@@ -24,7 +25,8 @@ class Game:
             if penalties == 4:
                 return True
             for color in range(4):
-                if self.lst_boards[player_index].row_limits[color] in (1, 13):
+                if (color in (0, 1) and self.lst_boards[player_index].row_limits[color] == 13) or \
+                        (color in (2, 3) and self.lst_boards[player_index].row_limits[color] == 1):
                     self.completed_lines[color] = True
         if sum(self.completed_lines) >= 2:
             return True
@@ -75,28 +77,15 @@ class Game:
             round += 1
 
 
-game = Game([HumanPlayer("meep", 2), AiPlayer("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
-# game = Game([ai("alice", 2, np.random.randn(27), 0), ai("bob", 2, np.random.randn(27), 0),
-#              ai("cia", 2, np.random.randn(27), 0)], 3)
-# game = Game([ai("alice", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
-            # ai("bob", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
-             # ai("cia", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27))])
-
-
-def test():
-    print(game.completed())
-    print("expected result for test 1:")
-    print("False")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-    print(game.play())
-    print("expected result for test 2:")
-    print("None")
-    print("-----------------------------------------------------------------------------------------------------------")
-
-
 if __name__ == "__main__":
-    # test()
-    game.play()
+    ui = PyGameUi()
+    ui.show_background()
+    game = Game([AiPlayer("meep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18), ui),
+                 AiPlayer("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
+    # game = Game([ai("alice", 2, np.random.randn(27), 0), ai("bob", 2, np.random.randn(27), 0),
+    #              ai("cia", 2, np.random.randn(27), 0)], 3)
+    # game = Game([ai("alice", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
+    # ai("bob", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
+    # ai("cia", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27))])
 
-# points: [^-]\d
+    game.play()

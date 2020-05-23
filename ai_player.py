@@ -5,8 +5,8 @@ import math
 
 
 class AiPlayer(Player):
-    def __init__(self, name, opponents, quadratic_factor, linear_factor, bias):
-        super().__init__(name, opponents)
+    def __init__(self, name, opponents, quadratic_factor, linear_factor, bias, ui=None):
+        super().__init__(name, opponents, ui)
         self.quadratic_factor = quadratic_factor
         self.linear_factor = linear_factor
         self.bias = bias
@@ -67,7 +67,7 @@ class AiPlayer(Player):
         max_turns_strength = -1000
         best_turns = None
         for possibility in possibilities:
-            turns_strength = self._get_sum_situation_(self._get_situation_(is_active_player, possibility))
+            turns_strength = self._get_sum_situation_(self._get_situation(is_active_player, possibility))
             if turns_strength > max_turns_strength:
                 best_turns = possibility
                 max_turns_strength = turns_strength

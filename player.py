@@ -5,6 +5,7 @@ from board import Board
 import numpy as np
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from time import sleep
 
 
 class CrossPossibility:
@@ -18,9 +19,10 @@ class CrossPossibility:
 
 class Player(ABC):
     """makes all decision for doing crosses and informs the player about the state of the boards"""
-    def __init__(self, name, opponents):
+    def __init__(self, name, opponents, ui=None):
         self.name = name
         self.opponents = opponents
+        self.ui = ui
         self.board = Board()         # eigenes board
         self.others = []
         for opponent_index in range(self.opponents):
@@ -43,22 +45,34 @@ class Player(ABC):
         pass
 
     def inform(self, boards, completed_lst, own_index):
+        self.board = boards[own_index]
+        self._update_ui()
         for player_index in range(len(boards)):
             if player_index == own_index:
-                self.board = boards[player_index]
+                continue
+            if own_index > player_index:
+                self.others[player_index] = boards[player_index]
             else:
-                if own_index > player_index:
-                    self.others[player_index] = boards[player_index]
-                else:
-                    self.others[player_index - 1] = boards[player_index]
+                self.others[player_index - 1] = boards[player_index]
         self.completed_lines = completed_lst
 
-    def starting(self):
-        Board.row_limit = np.array([-1, -1, -1, -1])
-        Board.row_number = np.array([0, 0, 0, 0])
-        Board.penalties = 0
+    def _update_ui(self):
+        if self.ui is None:
+            return
+        self.ui.penalties = self.board.penalties
+        for color, row_limit in enumerate(self.board.row_limits):
+            if color == 0:
+                self.ui.crosses_red = {row_limit}
+            elif color == 1:
+                self.ui.crosses_yellow = {row_limit}
+            elif color == 2:
+                self.ui.crosses_green = {row_limit}
+            else:
+                self.ui.crosses_blue = {row_limit}
+        self.ui.show_background()
+        sleep(1)
 
-    def _get_situation_(self, is_active_player=None, turns=None):
+    def _get_situation(self, is_active_player=None, turns=None):
         if turns is None:
             turns = [None]
         player_count = self.opponents + 1
@@ -101,7 +115,7 @@ class Player(ABC):
         return player_situation_sums
 
     def get_points(self):
-        return self._get_points_situation_(self._get_situation_())[-1]  # todo calculate points only for this player
+        return self._get_points_situation_(self._get_situation())[-1]  # todo calculate points only for this player
 
     def display(self):
         print("number of opponents: {}".format(self.opponents))
