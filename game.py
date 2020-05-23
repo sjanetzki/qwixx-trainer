@@ -2,7 +2,7 @@ from dice import Dice
 from board import Board
 from ai_player import AiPlayer
 from human_player import HumanPlayer
-from pygame_ui import PyGameUi
+from ui_pygame import PyGameUi
 import numpy as np
 
 
@@ -80,12 +80,7 @@ class Game:
 if __name__ == "__main__":
     ui = PyGameUi()
     ui.show_background()
-    game = Game([AiPlayer("meep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18), ui),
-                 AiPlayer("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
-    # game = Game([ai("alice", 2, np.random.randn(27), 0), ai("bob", 2, np.random.randn(27), 0),
-    #              ai("cia", 2, np.random.randn(27), 0)], 3)
-    # game = Game([ai("alice", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
-    # ai("bob", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27)),
-    # ai("cia", 2, np.random.randn(27), np.random.randn(27), np.random.randn(27))])
-
+    # game = Game([AiPlayer("meep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18), ui),
+    # AiPlayer("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
+    game = Game([HumanPlayer("meep", 2, ui)])
     game.play()

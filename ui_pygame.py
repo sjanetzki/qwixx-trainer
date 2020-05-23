@@ -1,7 +1,10 @@
+from player import CrossPossibility
 import pygame
 
 
 class PyGameUi(object):
+
+    pygame.init()
 
     black = (0, 0, 0)  # upper- or lowercase letters?
     dark_grey = (120, 120, 120)
@@ -23,55 +26,59 @@ class PyGameUi(object):
     def __init__(self):
         size = (1216, 650)
         self.screen = pygame.display.set_mode(size)
-        self.mouse_down = False
+        self.is_mouse_down = False
+        self.last_action = None
         self.crosses_by_color = [set(), set(), set(), set()]
         self.penalties = 0
 
     def show_background(self) -> None:
         """shows board as a with pygame functions"""
-        pygame.init()
         pygame.display.set_caption("Qwixx Board")
-        done = False
-        clock = pygame.time.Clock()
-        while not done:
-            done = True
+        self.screen.fill(PyGameUi.white)
+        font = pygame.font.SysFont('Comic Sans MS', 28, True, False)
+        lock = pygame.font.SysFont('Comic Sans MS', 50, True, False)
+
+        for row in range(4):
             for event in pygame.event.get():  # User did something
                 if event.type == pygame.QUIT:  # If user clicked close
-                    done = True  # Flag that we are done so we exit this loop
+                    PyGameUi.close()
+                    return
+            inactive_color, background_color, active_color = PyGameUi.convert_row_to_color(row)
+            pygame.draw.rect(self.screen, background_color, [32, 32 + 126 * row, 1152, 118],
+                             0)  # box behind the buttons
+            for eyes in range(0, 11):
+                self.button(eyes, 80, 80, inactive_color, active_color)
+                text = font.render("{}".format(int(eyes + 2)), True, PyGameUi.white)
+                if row < 2:
+                    self.screen.blit(text, [80 + 92 * eyes, 126 * row + 70])
+                else:
+                    self.screen.blit(text, [80 + 92 * (10 - eyes), 126 * row + 70])
+            self.button(12, 72, 72, inactive_color, active_color, True)
+            text = lock.render("*", True, PyGameUi.white)
+            self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
 
-            self.screen.fill(PyGameUi.white)
-            font = pygame.font.SysFont('Comic Sans MS', 28, True, False)
-            lock = pygame.font.SysFont('Comic Sans MS', 50, True, False)
+        pygame.draw.rect(self.screen, PyGameUi.light_grey, [784, 536, 400, 60], 0)
+        for eyes in range(1, 5):
+            self.button(eyes, 40, 40, PyGameUi.dark_grey, PyGameUi.black)
+        text = font.render("penalties", True, PyGameUi.dark_grey)
+        self.screen.blit(text, [800, 546])
+        clock = pygame.time.Clock()
+        clock.tick(60)
+        pygame.display.flip()
 
-            for row in range(4):
-                inactive_color, background_color, active_color = PyGameUi.convert_row_to_color(row)
-                pygame.draw.rect(self.screen, background_color, [32, 32 + 126 * row, 1152, 118], 0)   # box behind the buttons
-                for eyes in range(0, 11):
-                    self.button(eyes, 80, 80, inactive_color, active_color)
-                    text = font.render("{}".format(int(eyes + 2)), True, PyGameUi.white)
-                    if row < 2:
-                        self.screen.blit(text, [80 + 92 * eyes, 126 * row + 70])
-                    else:
-                        self.screen.blit(text, [80 + 92 * (10 - eyes), 126 * row + 70])
-                self.button(12, 72, 72, inactive_color, active_color, True)
-                text = lock.render("*", True, PyGameUi.white)
-                self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
-
-            pygame.draw.rect(self.screen, PyGameUi.light_grey, [784, 536, 400, 60], 0)
-            for eyes in range(1, 5):
-                self.button(eyes, 40, 40, PyGameUi.dark_grey, PyGameUi.black)
-            text = font.render("penalties", True, PyGameUi.dark_grey)
-            self.screen.blit(text, [800, 546])
-            pygame.display.flip()
-            clock.tick(60)
-        # pygame.quit()
+    def get_turn(self):
+        while self.last_action is None:
+            self.show_background()
+        last_action = self.last_action
+        self.last_action = None
+        return last_action
 
     def button(self, eyes, w, h, inactive_color, active_color, circle=False):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         x, y = PyGameUi.convert_eyes_to_coordinates(PyGameUi.convert_color_to_row(active_color), eyes, circle)
         if click[0] == 0:
-            self.mouse_down = False
+            self.is_mouse_down = False
 
         # choose color for button
         if PyGameUi.is_mouse_over_button(x, y, w, h, circle, mouse):
@@ -101,24 +108,28 @@ class PyGameUi(object):
 
     def click_button(self, x, active_color) -> bool:  # comparable to 'cross()'
         """sets a cross chosen by the player"""
-        if self.mouse_down:
+        if self.is_mouse_down or self.last_action is not None:
             return False
-        self.mouse_down = True
+        self.is_mouse_down = True
         row = active_color
         eyes = PyGameUi.convert_coordinates_to_eyes(row, x)
 
         if eyes is not None:
             if row == PyGameUi.red_vibrant:
-                self.crosses_by_color[0].add(eyes)
+                self.last_action = CrossPossibility(0, eyes)
             if row == PyGameUi.yellow_vibrant:
-                self.crosses_by_color[1].add(eyes)
+                self.last_action = CrossPossibility(1, eyes)
             if row == PyGameUi.green_vibrant:
-                self.crosses_by_color[2].add(eyes)
+                self.last_action = CrossPossibility(2, eyes)
             if row == PyGameUi.blue_vibrant:
-                self.crosses_by_color[3].add(eyes)
+                self.last_action = CrossPossibility(3, eyes)
 
         if row == PyGameUi.black and eyes - 1 == self.penalties:
-            self.penalties += 1
+            self.last_action = CrossPossibility(4, None)
+
+    @staticmethod
+    def close():
+        pygame.quit()
 
     @staticmethod
     def is_mouse_over_button(x, y, w, h, circle, mouse) -> bool:
