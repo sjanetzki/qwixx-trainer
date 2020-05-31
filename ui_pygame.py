@@ -30,6 +30,7 @@ class PyGameUi(object):
         self.last_action = None
         self.crosses_by_color = [set(), set(), set(), set()]
         self.penalties = 0
+        self.lst_eyes = [0, 0, 0, 0, 0, 0]
         self.is_turn_invalid = False
 
     def show_background(self) -> None:
@@ -48,7 +49,7 @@ class PyGameUi(object):
                 if event.type == pygame.QUIT:  # If user clicked close
                     PyGameUi.close()
                     return
-            inactive_color, background_color, active_color = PyGameUi.convert_row_to_color(row)
+            inactive_color, background_color, active_color = PyGameUi.convert_number_to_color(row)
             pygame.draw.rect(self.screen, background_color, [32, 32 + 126 * row, 1152, 118],
                              0)  # box behind the buttons
             for eyes in range(0, 11):
@@ -62,14 +63,26 @@ class PyGameUi(object):
             text = lock.render("*", True, PyGameUi.white)
             self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
 
+        # draw penalties
         pygame.draw.rect(self.screen, PyGameUi.light_grey, [784, 536, 400, 60], 0)
         for eyes in range(1, 5):
             self.button(eyes, 40, 40, PyGameUi.dark_grey, PyGameUi.black)
         text = font.render("penalties", True, PyGameUi.dark_grey)
         self.screen.blit(text, [800, 546])
+
+        self._render_dice(font)
+
         clock = pygame.time.Clock()
         clock.tick(60)
         pygame.display.flip()
+
+    def _render_dice(self, font):
+        for dice in range(len(self.lst_eyes)):
+            text = font.render("{}".format(self.lst_eyes[dice]), True, self.convert_number_to_color(dice, True))
+            self.screen.blit(text, [80 + 92 * dice, 546])
+
+        text = font.render("your dice", True, PyGameUi.dark_grey)
+        self.screen.blit(text, [80 + 92 * 2, 576])
 
     def get_turn(self):
         while self.last_action is None:
@@ -176,18 +189,31 @@ class PyGameUi(object):
             return 4
 
     @staticmethod
-    def convert_row_to_color(row):
-        # inactive, background, active
-        if row == 0:
-            return PyGameUi.red, PyGameUi.light_red, PyGameUi.red_vibrant
-        if row == 1:
-            return PyGameUi.yellow, PyGameUi.light_yellow, PyGameUi.yellow_vibrant
-        if row == 2:
-            return PyGameUi.green, PyGameUi.light_green, PyGameUi.green_vibrant
-        if row == 3:
-            return PyGameUi.blue, PyGameUi.light_blue, PyGameUi.blue_vibrant
-        if row == 4:
-            return PyGameUi.light_grey, PyGameUi.dark_grey, PyGameUi.black
+    def convert_number_to_color(number, is_dice=False):
+        if is_dice:
+            if number in (0, 1):
+                return PyGameUi.dark_grey
+            if number == 2:
+                return PyGameUi.red
+            if number == 3:
+                return PyGameUi.yellow_vibrant
+            if number == 4:
+                return PyGameUi.green_vibrant
+            if number == 5:
+                return PyGameUi.blue_vibrant
+        else:   # inactive, background, active
+            if number == 0:
+                return PyGameUi.red, PyGameUi.light_red, PyGameUi.red_vibrant
+            if number == 1:
+                return PyGameUi.yellow, PyGameUi.light_yellow, PyGameUi.yellow_vibrant
+            if number == 2:
+                return PyGameUi.green, PyGameUi.light_green, PyGameUi.green_vibrant
+            if number == 3:
+                return PyGameUi.blue, PyGameUi.light_blue, PyGameUi.blue_vibrant
+            if number == 4:
+                return PyGameUi.light_grey, PyGameUi.dark_grey, PyGameUi.black
+
+
 
 
 if __name__ == "__main__":

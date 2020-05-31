@@ -75,6 +75,8 @@ class AiPlayer(Player):
         return best_turns
 
     def cross_active(self, lst_eyes) -> List[CrossPossibility]:
+        super().cross_active(lst_eyes)
+
         sleep(1)
         possibilities = self.get_possibilities_active(lst_eyes)
         return self._find_best_turns(possibilities, True)
@@ -98,5 +100,7 @@ class AiPlayer(Player):
         return possibility_lst
 
     def cross_passive(self, lst_eyes):
+        super().cross_passive(lst_eyes)
+
         possibilities = self.get_possibilities_passive(lst_eyes)
         return self._find_best_turns(possibilities, False)

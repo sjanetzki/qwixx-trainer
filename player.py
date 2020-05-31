@@ -28,6 +28,7 @@ class Player(ABC):
             self.others.append(Board())     # lst mit boards der anderen # todo avoid duplicated boards
         self.wish = (-1, -1)
         self.completed_lines = [False, False, False, False]
+        self.lst_eyes = [0, 0, 0, 0, 0, 0]
 
     def start_new_game(self):
         self.board = Board()
@@ -35,13 +36,15 @@ class Player(ABC):
         for opponent_index in range(self.opponents):
             self.others.append(Board())
 
-    @abstractmethod
     def cross_active(self, lst_eyes):
-        pass
+        if self.ui is None:
+            return
+        self.ui.lst_eyes = lst_eyes
 
-    @abstractmethod
     def cross_passive(self, lst_eyes):
-        pass
+        if self.ui is None:
+            return
+        self.ui.lst_eyes = lst_eyes
 
     def inform(self, boards, completed_lst, own_index):
         self.board = boards[own_index]
