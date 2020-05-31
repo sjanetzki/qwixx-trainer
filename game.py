@@ -44,15 +44,12 @@ class Game:
 
     def make_turn(self, player_index, turn, is_active_player, lst_eyes):
         is_turn_valid = True
-        for row in range(4):
-            is_turn_valid &= (turn.row == row
-                              and is_active_player
-                              and (lst_eyes[0] + lst_eyes[1] == turn.eyes
-                                   or lst_eyes[0] + lst_eyes[row + 2] == turn.eyes
-                                   or lst_eyes[1] + lst_eyes[row + 2] == turn.eyes)) \
-                             or (turn.row == row
-                                 and not is_active_player
-                                 and lst_eyes[0] + lst_eyes[1] == turn.eyes)
+        is_turn_valid &= (is_active_player
+                          and (lst_eyes[0] + lst_eyes[1] == turn.eyes
+                               or lst_eyes[0] + lst_eyes[turn.row + 2] == turn.eyes
+                               or lst_eyes[1] + lst_eyes[turn.row + 2] == turn.eyes)) \
+                         or (not is_active_player
+                             and lst_eyes[0] + lst_eyes[1] == turn.eyes)
 
         is_turn_valid &= self.lst_boards[player_index].cross(turn, self.completed_lines, is_active_player)
 
