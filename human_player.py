@@ -7,10 +7,7 @@ class HumanPlayer(Player):
         super().cross_passive(lst_eyes)
 
         assert (self.ui is not None)
-        wish = list()
-        wish.append(self.ui.get_turn())
-        wish.append(self.ui.get_turn())
-        return wish
+        return [self.ui.get_turn()]
 
     def cross_active(self, lst_eyes):
         super().cross_active(lst_eyes)

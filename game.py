@@ -43,44 +43,40 @@ class Game:
         return ranking
 
     def make_turn(self, player_index, turn, is_active_player, lst_eyes):
-        is_turn_valid = True
-        is_turn_valid &= (is_active_player
-                          and (lst_eyes[0] + lst_eyes[1] == turn.eyes
-                               or lst_eyes[0] + lst_eyes[turn.row + 2] == turn.eyes
-                               or lst_eyes[1] + lst_eyes[turn.row + 2] == turn.eyes)) \
+        is_turn_valid = turn.row == 4 \
+                         or (is_active_player
+                             and (lst_eyes[0] + lst_eyes[1] == turn.eyes
+                                  or lst_eyes[0] + lst_eyes[turn.row + 2] == turn.eyes
+                                  or lst_eyes[1] + lst_eyes[turn.row + 2] == turn.eyes)) \
                          or (not is_active_player
                              and lst_eyes[0] + lst_eyes[1] == turn.eyes)
 
         is_turn_valid &= self.lst_boards[player_index].cross(turn, self.completed_lines, is_active_player)
-
+        if not (is_turn_valid or isinstance(self.lst_player[player_index], HumanPlayer)):
+            pass
         assert (is_turn_valid or isinstance(self.lst_player[player_index], HumanPlayer))
         if not is_turn_valid:
             self.lst_player[player_index].inform_about_invalid_turn()
+        return is_turn_valid
 
     def play(self) -> None:
-        round = 1
         while True:
-            # print("round: {}".format(round))
             for active_player_index in range(self.player_count):
                 lst_eyes = self.dice.throw()
-                turns_per_player = []
-                for active_or_passive_player_index in range(self.player_count):
-                    player = self.lst_player[active_or_passive_player_index]
-                    if active_player_index != active_or_passive_player_index:
-                        wish = player.cross_passive(lst_eyes)
-                    else:
-                        wish = player.cross_active(lst_eyes)
-                    turns_per_player.append(wish)
-
+                is_turn_valid = False
                 for player_index in range(self.player_count):
-                    turns = turns_per_player[player_index]
-                    for turn in turns:
-                        self.make_turn(player_index, turn, player_index == active_player_index, lst_eyes)
+                    player = self.lst_player[player_index]
+                    while not is_turn_valid:
+                        if active_player_index != player_index:
+                            turns = player.cross_passive(lst_eyes)
+                        else:
+                            turns = player.cross_active(lst_eyes)
+                        for turn in turns:
+                            is_turn_valid = self.make_turn(player_index, turn, player_index == active_player_index, lst_eyes)
                 for player_index in range(self.player_count):
                     self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
                 if self.is_completed():
                     return
-            round += 1
 
 
 if __name__ == "__main__":
@@ -88,5 +84,6 @@ if __name__ == "__main__":
     ui.show_background()
     # game = Game([AiPlayer("meep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18), ui),
     # AiPlayer("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
-    game = Game([HumanPlayer("meep", 2, ui)])
+    game = Game([HumanPlayer("meep", 2, ui),
+                 AiPlayer("meeep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
     game.play()
