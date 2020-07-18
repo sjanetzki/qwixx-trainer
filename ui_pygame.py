@@ -6,6 +6,8 @@ class PyGameUi(object):
 
     pygame.init()
 
+    scale_factor = 2/3
+
     black = (0, 0, 0)  # upper- or lowercase letters?
     dark_grey = (120, 120, 120)
     light_grey = (215, 215, 215)
@@ -23,8 +25,39 @@ class PyGameUi(object):
     green_vibrant = (62, 224, 109)
     red_vibrant = (255, 0, 20)
 
+    screen_x_length = int(1216 * scale_factor)
+    screen_y_length = int(650 * scale_factor)
+    box_x = int(32 * scale_factor)
+    box_y = box_x
+    box_y_distance = int(126 * scale_factor)
+    box_x_length = int(1152 * scale_factor)
+    box_y_length = int(118 * scale_factor)
+    button_length = int(80 * scale_factor)
+    button_x_distance = int(92 * scale_factor)
+    button_y = int(50 * scale_factor)
+    button_x = button_y
+    button_text_y = int(70 * scale_factor)
+    circle_diameter = int(72 * scale_factor)
+    circle_radius = circle_diameter // 2
+    circle_x = int(1112 * scale_factor)
+    circle_text_x_offset = int(-10 * scale_factor)
+    circle_y = int(90 * scale_factor)
+    circle_text_y_offset = int(6 * scale_factor)
+    penalty_box_x = int(784 * scale_factor)
+    penalty_box_y = (536 * scale_factor)
+    penalty_box_x_length = int(400 * scale_factor)
+    penalty_box_y_length = int(60 * scale_factor)
+    penalty_button_length = button_length // 2
+    penalty_button_x_offset = int(146 * scale_factor)
+    penalty_text_x_offset = int(16 * scale_factor)
+    penalty_text_y_offset = (penalty_box_y_length - penalty_button_length) // 2
+    skip_button_x = int(590 * scale_factor)
+    skip_button_x_length = int(170 * scale_factor)
+    dice_text_x_offset = int(225 * scale_factor)
+    dice_text_y_offset = int(40 * scale_factor)
+
     def __init__(self):
-        size = (1216, 650)
+        size = (PyGameUi.screen_x_length, PyGameUi.screen_y_length)
         self.screen = pygame.display.set_mode(size)
         self.is_mouse_down = False
         self.last_action = None
@@ -41,8 +74,8 @@ class PyGameUi(object):
         else:
             self.screen.fill(PyGameUi.white)
 
-        font = pygame.font.SysFont('Comic Sans MS', 28, True, False)
-        lock = pygame.font.SysFont('Comic Sans MS', 50, True, False)
+        font = pygame.font.SysFont('Comic Sans MS', int(28 * PyGameUi.scale_factor), True, False)
+        lock = pygame.font.SysFont('Comic Sans MS', int(50 * PyGameUi.scale_factor), True, False)
 
         for row in range(4):
             for event in pygame.event.get():  # User did something
@@ -50,25 +83,42 @@ class PyGameUi(object):
                     PyGameUi.close()
                     return
             inactive_color, background_color, active_color = PyGameUi.convert_number_to_color(row)
-            pygame.draw.rect(self.screen, background_color, [32, 32 + 126 * row, 1152, 118],
-                             0)  # box behind the buttons
+            pygame.draw.rect(self.screen, background_color,
+                             [PyGameUi.box_x, PyGameUi.box_y + PyGameUi.box_y_distance * row, PyGameUi.box_x_length,
+                              PyGameUi.box_y_length], 0)  # box behind the buttons
             for eyes in range(0, 11):
-                self.button(eyes, 80, 80, inactive_color, active_color)
+                self.button(eyes, PyGameUi.button_length, PyGameUi.button_length, inactive_color, active_color)
                 text = font.render("{}".format(int(eyes + 2)), True, PyGameUi.white)
                 if row < 2:
-                    self.screen.blit(text, [80 + 92 * eyes, 126 * row + 70])
+                    self.screen.blit(text, [PyGameUi.button_length + PyGameUi.button_x_distance * eyes,
+                                            PyGameUi.box_y_distance * row + PyGameUi.button_text_y])
                 else:
-                    self.screen.blit(text, [80 + 92 * (10 - eyes), 126 * row + 70])
-            self.button(12, 72, 72, inactive_color, active_color, True)
+                    self.screen.blit(text, [PyGameUi.button_length + PyGameUi.button_x_distance * (10 - eyes),
+                                            PyGameUi.box_y_distance * row + PyGameUi.button_text_y])
+            self.button(12, PyGameUi.circle_diameter, PyGameUi.circle_diameter, inactive_color, active_color, True)
             text = lock.render("*", True, PyGameUi.white)
-            self.screen.blit(text, [1102, 90 * (row + 1) + 36 * row - 30])
+            self.screen.blit(text, [PyGameUi.circle_x + PyGameUi.circle_text_x_offset,
+                                    PyGameUi.circle_y * (row + 1) + PyGameUi.circle_radius * (
+                                                row - 1) + PyGameUi.circle_text_y_offset])
 
         # draw penalties
-        pygame.draw.rect(self.screen, PyGameUi.light_grey, [784, 536, 400, 60], 0)
+        pygame.draw.rect(self.screen, PyGameUi.light_grey,
+                         [PyGameUi.penalty_box_x, PyGameUi.penalty_box_y, PyGameUi.penalty_box_x_length,
+                          PyGameUi.penalty_box_y_length], 0)
         for eyes in range(1, 5):
-            self.button(eyes, 40, 40, PyGameUi.dark_grey, PyGameUi.black)
+            self.button(eyes, PyGameUi.penalty_button_length, PyGameUi.penalty_button_length, PyGameUi.dark_grey,
+                        PyGameUi.black)
         text = font.render("penalties", True, PyGameUi.dark_grey)
-        self.screen.blit(text, [800, 546])
+        self.screen.blit(text, [PyGameUi.penalty_box_x + PyGameUi.penalty_text_x_offset,
+                                PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
+
+        pygame.draw.rect(self.screen, PyGameUi.light_grey,
+                         [PyGameUi.skip_button_x, PyGameUi.penalty_box_y, PyGameUi.skip_button_x_length,
+                          PyGameUi.penalty_box_y_length], 0)
+        # self.button(0, 50, 20, PyGameUi.light_grey, PyGameUi.dark_grey) # todo
+        text = font.render("skip 2nd x", True, PyGameUi.dark_grey)
+        self.screen.blit(text, [PyGameUi.skip_button_x + PyGameUi.penalty_text_y_offset,
+                                PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
         self._render_dice(font)
 
@@ -79,10 +129,13 @@ class PyGameUi(object):
     def _render_dice(self, font):
         for dice in range(len(self.lst_eyes)):
             text = font.render("{}".format(self.lst_eyes[dice]), True, self.convert_number_to_color(dice, True))
-            self.screen.blit(text, [80 + 92 * dice, 546])
+            self.screen.blit(text,
+                             [PyGameUi.button_length + PyGameUi.button_x_distance * dice,
+                              PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
         text = font.render("your dice", True, PyGameUi.dark_grey)
-        self.screen.blit(text, [80 + 92 * 2, 576])
+        self.screen.blit(text, [PyGameUi.box_x + PyGameUi.dice_text_x_offset,
+                                PyGameUi.penalty_box_y + PyGameUi.dice_text_y_offset])
 
     def get_turn(self):
         while self.last_action is None:
@@ -158,22 +211,27 @@ class PyGameUi(object):
     @staticmethod
     def convert_coordinates_to_eyes(row, x):
         if row in (PyGameUi.red_vibrant, PyGameUi.yellow_vibrant):
-            return ((x - 50) // 92) + 2  # + 2 because eyes in index from 0 -11 -> 2 - 13
+            return (x - PyGameUi.button_x) // PyGameUi.button_x_distance + 2  # + 2 because eyes in index from 0 -11 -> 2 - 13
         elif row in (PyGameUi.green_vibrant, PyGameUi.blue_vibrant):
-            return 12 - ((x - 50) // 92)  # eyes originally in index from 0 -11 -> 12 - 1
-        else:
-            return (x - 930) // 50
+            return 12 - ((x - PyGameUi.button_x) // PyGameUi.button_x_distance)  # eyes originally in index from 0 -11 -> 12 - 1
+        else:  # penalties
+            return (x - PyGameUi.penalty_box_x - PyGameUi.penalty_button_x_offset) // (
+                        PyGameUi.penalty_button_length + PyGameUi.penalty_text_y_offset)
 
     @staticmethod
     def convert_eyes_to_coordinates(row, eyes, circle):
-        assert(row in range(5))
+        assert (row in range(5))
         if circle:
-            return 1112, (90 * (row + 1) + 36 * row)
+            return (PyGameUi.circle_x, PyGameUi.circle_y * (row + 1) + PyGameUi.circle_radius * row)
         if row < 2:
-            return (50 + 92 * eyes), (50 * (row + 1) + 76 * row)    # x, y
+            return (PyGameUi.button_x + PyGameUi.button_x_distance * eyes,
+                    PyGameUi.button_y * (row + 1) + (PyGameUi.box_y_distance - PyGameUi.button_y) * row)  # x, y
         if row < 4:
-            return (50 + 92 * (10 - eyes)), (50 * (row + 1) + 76 * row) # todo why 10 and not 12?
-        return (930 + 50 * eyes), 546
+            return (PyGameUi.button_x + PyGameUi.button_x_distance * (10 - eyes)), (PyGameUi.button_y * (row + 1) + (
+                    PyGameUi.box_y_distance - PyGameUi.button_y) * row)  # todo why 10 and not 12?
+        return (PyGameUi.penalty_box_x + PyGameUi.penalty_button_x_offset + (
+                PyGameUi.penalty_button_length + PyGameUi.penalty_text_y_offset) * eyes,
+                PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset)
 
     @staticmethod
     def convert_color_to_row(color):
@@ -212,8 +270,6 @@ class PyGameUi(object):
                 return PyGameUi.blue, PyGameUi.light_blue, PyGameUi.blue_vibrant
             if number == 4:
                 return PyGameUi.light_grey, PyGameUi.dark_grey, PyGameUi.black
-
-
 
 
 if __name__ == "__main__":
