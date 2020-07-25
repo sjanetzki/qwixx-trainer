@@ -44,16 +44,14 @@ class Game:
 
     def make_turn(self, player_index, turn, is_active_player, lst_eyes):
         is_turn_valid = turn.row == 4 \
-                         or (is_active_player
-                             and (lst_eyes[0] + lst_eyes[1] == turn.eyes
-                                  or lst_eyes[0] + lst_eyes[turn.row + 2] == turn.eyes
-                                  or lst_eyes[1] + lst_eyes[turn.row + 2] == turn.eyes)) \
-                         or (not is_active_player
-                             and lst_eyes[0] + lst_eyes[1] == turn.eyes)
+                        or (is_active_player
+                            and (lst_eyes[0] + lst_eyes[1] == turn.eyes
+                                 or lst_eyes[0] + lst_eyes[turn.row + 2] == turn.eyes
+                                 or lst_eyes[1] + lst_eyes[turn.row + 2] == turn.eyes)) \
+                        or (not is_active_player
+                            and lst_eyes[0] + lst_eyes[1] == turn.eyes)
 
         is_turn_valid &= self.lst_boards[player_index].cross(turn, self.completed_lines, is_active_player)
-        if not (is_turn_valid or isinstance(self.lst_player[player_index], HumanPlayer)):
-            pass
         assert (is_turn_valid or isinstance(self.lst_player[player_index], HumanPlayer))
         if not is_turn_valid:
             self.lst_player[player_index].inform_about_invalid_turn()
@@ -61,19 +59,43 @@ class Game:
 
     def play(self) -> None:
         while True:
-            for active_player_index in range(self.player_count):
+            for active_player_index in range(self.player_count):        # todo smaller methods e.g. make_turns_for_player
                 lst_eyes = self.dice.throw()
-                is_turn_valid = False
                 for player_index in range(self.player_count):
                     player = self.lst_player[player_index]
-                    while not is_turn_valid:
-                        if active_player_index != player_index:
-                            turns = player.cross_passive(lst_eyes)
-                        else:
-                            turns = player.cross_active(lst_eyes)
-                        for turn in turns:
-                            is_turn_valid = self.make_turn(player_index, turn, player_index == active_player_index,
-                                                           lst_eyes)
+                    is_active_player = player_index == active_player_index
+
+                    if isinstance(player, HumanPlayer) and is_active_player:
+                        is_turn_valid = False
+                        turn_index = 0
+                        while not is_turn_valid:
+                            turns = player.cross_active(lst_eyes, turn_index)
+                            assert (len(turns) == 1)
+                            is_turn_valid = self.make_turn(player_index, turns[0], is_active_player, lst_eyes)
+                        turn_index += 1
+                        is_turn_valid = False
+                        while not is_turn_valid:
+                            turns = player.cross_active(lst_eyes, turn_index)
+                            assert (len(turns) <= 1)
+                            if len(turns) != 0:
+                                is_turn_valid = self.make_turn(player_index, turns[0], is_active_player, lst_eyes)
+                            else:
+                                is_turn_valid = True
+
+                    else:
+                        is_turn_valid = False
+                        while not is_turn_valid:
+                            if is_active_player:
+                                turns = player.cross_active(lst_eyes)
+                                assert (1 <= len(turns) <= 2)
+                                # assert (len(turns) in (1, 2))
+                            else:
+                                turns = player.cross_passive(lst_eyes)
+                                assert (len(turns) <= 1)
+                            for turn in turns:
+                                is_turn_valid = self.make_turn(player_index, turn, is_active_player, lst_eyes)
+                            if len(turns) == 0:
+                                is_turn_valid = True
 
                 # inform all players about new game situation AFTER they made their turns
                 for player_index in range(self.player_count):

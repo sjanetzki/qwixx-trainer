@@ -10,7 +10,7 @@ class PyGameUi(object):
 
     black = (0, 0, 0)  # upper- or lowercase letters?
     dark_grey = (120, 120, 120)
-    light_grey = (215, 215, 215)
+    light_grey = (205, 205, 205)
     white = (255, 255, 255)
     light_red = (255, 156, 163)
     red = (255, 103, 115)
@@ -113,15 +113,16 @@ class PyGameUi(object):
         for eyes in range(1, 5):
             self.button(eyes, PyGameUi.penalty_button_length, PyGameUi.penalty_button_length, PyGameUi.dark_grey,
                         PyGameUi.black)
-        text = font.render("penalties", True, PyGameUi.dark_grey)
+        text = font.render("penalties", True, PyGameUi.white)
         self.screen.blit(text, [PyGameUi.penalty_box_x + PyGameUi.penalty_text_x_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
         pygame.draw.rect(self.screen, PyGameUi.light_grey,
                          [PyGameUi.skip_button_x, PyGameUi.penalty_box_y, PyGameUi.skip_button_x_length,
                           PyGameUi.penalty_box_y_length], 0)
-        # self.button(0, 50, 20, PyGameUi.light_grey, PyGameUi.dark_grey) # todo
-        text = font.render("skip 2nd x", True, PyGameUi.dark_grey)
+        self.button(0, PyGameUi.skip_button_x_length, PyGameUi.penalty_box_y_length, PyGameUi.light_grey,
+                    PyGameUi.dark_grey)
+        text = font.render("skip 2nd x", True, PyGameUi.white)
         self.screen.blit(text, [PyGameUi.skip_button_x + PyGameUi.penalty_text_y_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
@@ -193,7 +194,7 @@ class PyGameUi(object):
                 pygame.draw.rect(self.screen, inactive_color, (x, y, w, h))
 
     def click_button(self, x, active_color) -> bool:  # comparable to 'cross()'
-        """sets a cross chosen by the player"""
+        """sets a cross chosen by the player, chooses a penalty, or skips one turn"""
         if self.is_mouse_down or self.last_action is not None:
             return False
         self.is_mouse_down = True
@@ -213,6 +214,9 @@ class PyGameUi(object):
 
         if row == PyGameUi.black and eyes - 1 == self.penalties:
             self.last_action = CrossPossibility(4, None)
+
+        if row == PyGameUi.dark_grey:
+            self.last_action = "skip"
 
     @staticmethod
     def close():
@@ -235,18 +239,20 @@ class PyGameUi(object):
 
     @staticmethod
     def convert_eyes_to_coordinates(row, eyes, circle):
-        assert (row in range(5))
+        assert (row in range(6))
         if circle:
-            return (PyGameUi.circle_x, PyGameUi.circle_y * (row + 1) + PyGameUi.circle_radius * row)
+            return PyGameUi.circle_x, PyGameUi.circle_y * (row + 1) + PyGameUi.circle_radius * row
         if row < 2:
             return (PyGameUi.button_x + PyGameUi.button_x_distance * eyes,
                     PyGameUi.button_y * (row + 1) + (PyGameUi.box_y_distance - PyGameUi.button_y) * row)  # x, y
         if row < 4:
             return (PyGameUi.button_x + PyGameUi.button_x_distance * (10 - eyes)), (PyGameUi.button_y * (row + 1) + (
                     PyGameUi.box_y_distance - PyGameUi.button_y) * row)  # todo why 10 and not 12?
-        return (PyGameUi.penalty_box_x + PyGameUi.penalty_button_x_offset + (
-                PyGameUi.penalty_button_length + PyGameUi.penalty_text_y_offset) * eyes,
-                PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset)
+        if row == 4:
+            return (PyGameUi.penalty_box_x + PyGameUi.penalty_button_x_offset + (
+                    PyGameUi.penalty_button_length + PyGameUi.penalty_text_y_offset) * eyes,
+                    PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset)
+        return PyGameUi.skip_button_x, PyGameUi.penalty_box_y
 
     @staticmethod
     def convert_color_to_row(color):
@@ -260,6 +266,8 @@ class PyGameUi(object):
             return 3
         if color == PyGameUi.black:
             return 4
+        if color == PyGameUi.dark_grey:
+            return 5
 
     @staticmethod
     def convert_number_to_color(number, is_dice=False):

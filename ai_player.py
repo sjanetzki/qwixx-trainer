@@ -66,17 +66,16 @@ class AiPlayer(Player):
     def _find_best_turns(self, possibilities, is_active_player) -> List[CrossPossibility]:
         # return possibilities[-1]
         max_turns_strength = -1000
-        best_turns = None
+        best_turn = None
         for possibility in possibilities:
             turns_strength = self._get_sum_situation_(self._get_situation(is_active_player, possibility))
             if turns_strength > max_turns_strength:
-                best_turns = possibility
+                best_turn = possibility
                 max_turns_strength = turns_strength
-        return best_turns
+        return best_turn
 
     def cross_active(self, lst_eyes) -> List[CrossPossibility]:
         super().cross_active(lst_eyes)
-
         sleep(1)
         possibilities = self.get_possibilities_active(lst_eyes)
         return self._find_best_turns(possibilities, True)
@@ -101,6 +100,5 @@ class AiPlayer(Player):
 
     def cross_passive(self, lst_eyes):
         super().cross_passive(lst_eyes)
-
         possibilities = self.get_possibilities_passive(lst_eyes)
         return self._find_best_turns(possibilities, False)
