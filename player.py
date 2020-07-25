@@ -40,11 +40,13 @@ class Player(ABC):
         if self.ui is None:
             return
         self.ui.lst_eyes = lst_eyes
+        self.ui.is_active_player = True
 
     def cross_passive(self, lst_eyes):
         if self.ui is None:
             return
         self.ui.lst_eyes = lst_eyes
+        self.ui.is_active_player = False
 
     def inform(self, boards, completed_lst, own_index):
         self.board = boards[own_index]

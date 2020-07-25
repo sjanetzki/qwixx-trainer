@@ -55,6 +55,10 @@ class PyGameUi(object):
     skip_button_x_length = int(170 * scale_factor)
     dice_text_x_offset = int(225 * scale_factor)
     dice_text_y_offset = int(40 * scale_factor)
+    player_mode_x_offset = int(205 * scale_factor)
+    player_mode_y_offset = dice_text_y_offset * 2
+    font_numbers_size = int(28 * scale_factor)
+    font_lock_size = int(50 * scale_factor)
 
     def __init__(self):
         size = (PyGameUi.screen_x_length, PyGameUi.screen_y_length)
@@ -65,6 +69,7 @@ class PyGameUi(object):
         self.penalties = 0
         self.lst_eyes = [0, 0, 0, 0, 0, 0]
         self.is_turn_invalid = False
+        self.is_active_player = True
 
     def show_background(self) -> None:
         """shows board as a with pygame functions"""
@@ -74,8 +79,8 @@ class PyGameUi(object):
         else:
             self.screen.fill(PyGameUi.white)
 
-        font = pygame.font.SysFont('Comic Sans MS', int(28 * PyGameUi.scale_factor), True, False)
-        lock = pygame.font.SysFont('Comic Sans MS', int(50 * PyGameUi.scale_factor), True, False)
+        font = pygame.font.SysFont('Comic Sans MS', PyGameUi.font_numbers_size, True, False)
+        lock = pygame.font.SysFont('Comic Sans MS', PyGameUi.font_lock_size, True, False)
 
         for row in range(4):
             for event in pygame.event.get():  # User did something
@@ -121,6 +126,7 @@ class PyGameUi(object):
                                 PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
         self._render_dice(font)
+        self._show_player_mode(font)
 
         clock = pygame.time.Clock()
         clock.tick(60)
@@ -136,6 +142,15 @@ class PyGameUi(object):
         text = font.render("your dice", True, PyGameUi.dark_grey)
         self.screen.blit(text, [PyGameUi.box_x + PyGameUi.dice_text_x_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.dice_text_y_offset])
+
+    def _show_player_mode(self, font):
+        if self.is_active_player:
+            player_mode = "active player"
+        else:
+            player_mode = "passive player"
+        text = font.render("{}".format(player_mode), True, PyGameUi.dark_grey)
+        self.screen.blit(text, [PyGameUi.box_x + PyGameUi.player_mode_x_offset,
+                                PyGameUi.penalty_box_y + PyGameUi.player_mode_y_offset])
 
     def get_turn(self):
         while self.last_action is None:

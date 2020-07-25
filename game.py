@@ -72,7 +72,10 @@ class Game:
                         else:
                             turns = player.cross_active(lst_eyes)
                         for turn in turns:
-                            is_turn_valid = self.make_turn(player_index, turn, player_index == active_player_index, lst_eyes)
+                            is_turn_valid = self.make_turn(player_index, turn, player_index == active_player_index,
+                                                           lst_eyes)
+
+                # inform all players about new game situation AFTER they made their turns
                 for player_index in range(self.player_count):
                     self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
                 if self.is_completed():
