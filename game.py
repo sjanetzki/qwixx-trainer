@@ -72,6 +72,8 @@ class Game:
                             turns = player.cross_active(lst_eyes, turn_index)
                             assert (len(turns) == 1)
                             is_turn_valid = self.make_turn(player_index, turns[0], is_active_player, lst_eyes)
+                        self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
+
                         turn_index += 1
                         is_turn_valid = False
                         while not is_turn_valid:
@@ -88,7 +90,6 @@ class Game:
                             if is_active_player:
                                 turns = player.cross_active(lst_eyes)
                                 assert (1 <= len(turns) <= 2)
-                                # assert (len(turns) in (1, 2))
                             else:
                                 turns = player.cross_passive(lst_eyes)
                                 assert (len(turns) <= 1)
