@@ -4,6 +4,7 @@ from enum import IntEnum
 
 
 class Row(IntEnum):
+    """gives colors of the rows a number"""
     RED = 0
     YELLOW = 1
     GREEN = 2
@@ -18,6 +19,7 @@ class Board:
 
     @property
     def row_limits(self):
+        """finds the row limit of each line, which is the number on the furthest right"""
         row_limits = np.array([1, 1, 13, 13])
         for color, crosses in enumerate(self.crosses_by_color):
             if len(crosses) == 0:
@@ -29,10 +31,12 @@ class Board:
         return row_limits
 
     def _set_row_limits(self, row, value):
+        """adds a new row limit (new cross)"""
         self.crosses_by_color[row].add(value)
 
     @property
     def row_numbers(self):
+        """finds the number of crosses made in each line"""
         row_numbers = np.array([0, 0, 0, 0])
         for color, crosses in enumerate(self.crosses_by_color):
             row_numbers[color] = len(crosses)
@@ -77,11 +81,13 @@ class Board:
                 return True
             else:
                 return False
+        return self._make_colored_cross(eyes, row, completed_lines)
 
-        # make a cross in a colored row
+    def _make_colored_cross(self, eyes, row, completed_lines):
+        """make cross in a colored row"""
         if eyes not in range(2, 13):
             return False
-        if completed_lines[row]:                  # Reihe zu -> nichts eintragen
+        if completed_lines[row]:  # row closed -> no crosses can be made there anymore
             print(completed_lines)
             print(row)
             print(self.row_limits)

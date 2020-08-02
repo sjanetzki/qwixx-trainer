@@ -1,3 +1,4 @@
+"""This file creates a trainer that finds the best (fittest) AI"""
 from ai_player import AiPlayer
 from game import Game
 import numpy as np
@@ -7,6 +8,8 @@ from typing import List
 
 
 class Trainer:
+    """trains AIs (with a genetic algorithm) in order to get the best AI out of all;
+    7 parameters therefore given manually"""
    # bodo_quadratic_factor = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
    # bodo_linear_factor = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
    # bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
@@ -26,6 +29,7 @@ class Trainer:
         self.saved_ais_rate = saved_ais_rate
 
     def _group(self, population) -> List[AiPlayer]:
+        """puts the individuals (AIs) of a population into random groups of the same size"""
         random.shuffle(population)
         groups = []
         for ai_index in range(0, len(population), self.group_size):
@@ -33,6 +37,7 @@ class Trainer:
         return groups
 
     def _rank(self, groups) -> List[AiPlayer]:
+        """lets the groups play and ranks them inside these groups by performance"""
         placement_groups = [[] for _ in range(self.group_size)]
         for group in groups:
             game = Game(group)
@@ -49,9 +54,12 @@ class Trainer:
         return ranking
 
     def _select(self, population_ranked) -> List[AiPlayer]:
+        """selects the best AIs, these survive -> rate of survivors given by parameter"""
         return population_ranked[0: int(self.survivor_rate * self.population_size)]  # slice operation
 
     def _mix_strategies(self, parent1, parent2) -> AiPlayer:
+        """mixes the strategies of the parents by creating averages of the different factors / bias to be their child's
+         strategy"""
         child_quadratic_factor = np.array([x / 2 for x in (parent1.quadratic_factor + parent2.quadratic_factor)])
         child_linear_factor = np.array([x / 2 for x in (parent1.linear_factor + parent2.linear_factor)])
         child_bias = np.array([x / 2 for x in (parent1.bias + parent2.bias)])
@@ -60,6 +68,7 @@ class Trainer:
         return AiPlayer("", self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
 
     def _recombine(self, population) -> List[AiPlayer]:
+        """extends the population by children that are created by recombination of their parents strategies"""
         children = []
         children_count = int((self.population_size - len(population)) * self.child_rate)  # = 25 (default value)
         for child_index in range(children_count):  # build pairs
@@ -69,6 +78,7 @@ class Trainer:
         return population
 
     def _mutate_strategy(self, ai) -> AiPlayer:
+        """mutates randomly small parts of the strategy of an AI"""
         for value_index in range(len(ai.linear_factor)):
             if random.random() < self.mutation_rate:
                 ai.quadratic_factor[value_index] = random.random()
@@ -79,31 +89,37 @@ class Trainer:
         return ai
 
     def _mutate(self, population) -> List[AiPlayer]:
+        """creates a list of mutated AIs"""
         mutated_population = []
         for ai in population:
             self.append = mutated_population.append(self._mutate_strategy(ai))
         return mutated_population
 
     def _add_random_ais(self, population) -> List[AiPlayer]:
+        """adds random AIs to the population in order to reach the original population size"""
         missing_ais = self.population_size - len(population)
         population.extend(
-            [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor, Trainer.caira_bias) for _ in range(missing_ais)])
+            [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
+                      Trainer.caira_bias) for _ in range(missing_ais)])     # todo not caira
         # [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
         return population
 
     def _find_max_points(self, population):
+        """finds the highest points that were scored in a generation"""
         max_points = -100
         for ai in population:
             max_points = max(ai.get_points(), max_points)
         return max_points
 
     def _find_avg_points(self, population):
+        """calculates the average points that were scored in an generation"""
         sum_points = 0
         for ai in population:
             sum_points += ai.get_points()
         return sum_points / self.population_size
 
     def _compute_next_generation(self, population) -> List[AiPlayer]:
+        """directs all steps that have to be done to create the next generation / a (partly) new population"""
         population = self._select(population)
         best_ais = population[:int(self.population_size*self.saved_ais_rate)]
         self._save_best_ais(best_ais)
@@ -115,14 +131,17 @@ class Trainer:
         return population
 
     def _build_initial_population(self) -> List[AiPlayer]:
+        """builds the initial population as a list of AIs with random strategies"""
         # return [AI("", self.group_size - 1, np.random.rand(self.group_size * 9), random.randint(-1, 1))for _ in
         # range(self.population_size)]  # fill in linear_factor
-        return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor, Trainer.caira_bias)
+        return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
+                         Trainer.caira_bias)
                 for _ in range(self.population_size)]
         # return [AI("", self.group_size - 1, np.zeros((self.group_size * 9,)), random.randint(-1, 1)) for _ in
         # range(self.population_size)]
 
     def train(self) -> AiPlayer:
+        """trains the AIs due to the parameters and returns the final and best AI"""
         population = self._build_initial_population()
         population = self._group(population)
         population = self._rank(population)
@@ -138,12 +157,14 @@ class Trainer:
         return best_ai
 
     def _save_best_ais(self, best_ais):
-        np.save("best_ais_file", best_ais, allow_pickle=True, fix_imports=True)      # where is the file saved?
+        """saves the best AI of a train cycle """
+        np.save("best_ais_file", best_ais, allow_pickle=True, fix_imports=True)      # todo where is the file saved?
         # os.system("cmd")
         # best_ais = [best_ais]
         # pickle.dump(best_ais, open("best_ais.dat", "wb"))        # todo test function -> doesn't work
 
     def _load_best_ais(self):                                # todo apply function
+        """loads the AIs that were saved"""
         # best_ais = np.load(best_ais_file.npy)
         best_ais = np.load("best_ais_file")
         return best_ais
