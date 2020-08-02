@@ -6,9 +6,9 @@ from player import Player
 class HumanPlayer(Player):
     """creates an environment for a human Player to play the game in conformity with the rules"""
 
-    def cross_passive(self, lst_eyes):
+    def cross_passive(self, lst_eyes, valid_turns):
         """chooses one valid cross or skips"""
-        super().cross_passive(lst_eyes)
+        super().cross_passive(lst_eyes, valid_turns)
 
         assert (self.ui is not None)
         wish = self.ui.get_turn()
@@ -16,9 +16,9 @@ class HumanPlayer(Player):
             return [wish]
         return []
 
-    def cross_active(self, lst_eyes, turn_index):
+    def cross_active(self, lst_eyes, valid_turns, turn_index):
         """chooses two valid crosses in succession; 2nd cross can be 'skip'"""
-        super().cross_active(lst_eyes)
+        super().cross_active(lst_eyes, valid_turns)
         assert (self.ui is not None)
 
         # get 1st turn

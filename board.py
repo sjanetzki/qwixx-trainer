@@ -64,52 +64,37 @@ class Board:
         else:
             print("penalties: {}".format(self.penalties))
 
-    def cross(self, position, completed_lines, is_active_player) -> bool:
-        """sets the crosses chosen by the player after checking their validity, returns True if the turn is valid"""
+    def cross(self, position, completed_lines, is_active_player):
+        """sets the crosses chosen by the player after checking their validity"""
         row = position.row
         eyes = position.eyes
         if row is None:
-            if is_active_player:
-                return False
-            else:
-                return True
-        if row not in range(5):
-            return False
+            assert(not is_active_player)
+            return
+        assert(row in range(5))
         if row == 4:
+            assert(self.penalties < 4)
             if self.penalties < 4:
                 self.penalties += 1
-                return True
-            else:
-                return False
-        return self._make_colored_cross(eyes, row, completed_lines)
+                return
+        self._make_colored_cross(eyes, row, completed_lines)
 
     def _make_colored_cross(self, eyes, row, completed_lines):
         """make cross in a colored row"""
-        if eyes not in range(2, 13):
-            return False
-        if completed_lines[row]:  # row closed -> no crosses can be made there anymore
-            print(completed_lines)
-            print(row)
-            print(self.row_limits)
-            return False
-
+        assert (eyes in range(2, 13))
+        assert (not completed_lines[row])    # row closed -> no crosses can be made there anymore
         if row in (Row.RED, Row.YELLOW):
             cross_last_number = eyes == 12
         else:
             cross_last_number = eyes == 2
-
-        if self.row_numbers[row] < 5 and cross_last_number:
-            return False
-
+        assert (not (self.row_numbers[row] < 5 and cross_last_number))
         if row in (Row.RED, Row.YELLOW) and self.row_limits[row] < eyes:
             self._set_row_limits(row, eyes)
             if cross_last_number:
                 self._set_row_limits(row, 13)
-            return True
         elif row in (Row.GREEN, Row.BLUE) and self.row_limits[row] > eyes:
             self._set_row_limits(row, eyes)
             if cross_last_number:
                 self._set_row_limits(row, 1)
-            return True
         else:
-            return False
+            assert False

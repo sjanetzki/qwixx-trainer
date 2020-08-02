@@ -1,5 +1,6 @@
 """This file creates a user interface (UI) with PyGame that shows the board and that can be interacted with by a
 human player by clicking buttons"""
+from board import Row
 from player import CrossPossibility
 import pygame
 
@@ -141,7 +142,7 @@ class PyGameUi(object):
                           PyGameUi.penalty_box_y_length], 0)
         self.button(0, PyGameUi.skip_button_x_length, PyGameUi.penalty_box_y_length, PyGameUi.light_grey,
                     PyGameUi.dark_grey)
-        text = font.render("skip 2nd x", True, PyGameUi.white)
+        text = font.render("skip", True, PyGameUi.white)
         self.screen.blit(text, [PyGameUi.skip_button_x + PyGameUi.penalty_text_y_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
@@ -226,13 +227,13 @@ class PyGameUi(object):
 
         if eyes is not None:
             if row == PyGameUi.red_vibrant:
-                self.last_action = CrossPossibility(0, eyes)
+                self.last_action = CrossPossibility(Row.RED, eyes)
             if row == PyGameUi.yellow_vibrant:
-                self.last_action = CrossPossibility(1, eyes)
+                self.last_action = CrossPossibility(Row.YELLOW, eyes)
             if row == PyGameUi.green_vibrant:
-                self.last_action = CrossPossibility(2, eyes)
+                self.last_action = CrossPossibility(Row.GREEN, eyes)
             if row == PyGameUi.blue_vibrant:
-                self.last_action = CrossPossibility(3, eyes)
+                self.last_action = CrossPossibility(Row.BLUE, eyes)
 
         if row == PyGameUi.black and eyes - 1 == self.penalties:
             self.last_action = CrossPossibility(4, None)

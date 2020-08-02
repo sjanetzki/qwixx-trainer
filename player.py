@@ -1,20 +1,26 @@
 """This file creates the players of Qwixx, devides them into subclasses (human, SimpleBot, and AI) and is the place
 where decisions are made."""
 
-from board import Board
+from board import Board, Row
 import numpy as np
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
 
-class CrossPossibility:
+
+class CrossPossibility(object):
     """puts row and eyes of a button into a precise string format"""
     def __init__(self, row, eyes):
+        assert (isinstance(row, Row) or row == 4)
+        assert (row != 4 or eyes is None)
         self.row = row
         self.eyes = eyes
 
     def __repr__(self):
         return "cp(" + str(self.row) + ", " + str(self.eyes) + ")"
+
+    def __eq__(self, other):
+        return other != "skip" and self.row == other.row and self.eyes == other.eyes
 
 
 class Player(ABC):
@@ -38,14 +44,14 @@ class Player(ABC):
         for opponent_index in range(self.opponents):
             self.others.append(Board())
 
-    def cross_active(self, lst_eyes):
+    def cross_active(self, lst_eyes, valid_turns):
         """gives UI information about (active) crosses to make"""
         if self.ui is None:
             return
         self.ui.lst_eyes = lst_eyes
         self.ui.is_active_player = True
 
-    def cross_passive(self, lst_eyes):
+    def cross_passive(self, lst_eyes, valid_turns):
         """gives UI information about (passive) crosses to make"""
         if self.ui is None:
             return
@@ -93,7 +99,7 @@ class Player(ABC):
                 for turn in turns:
                     if turn is not None:
                         assert(is_active_player is not None)
-                        assert(board.cross(turn, self.completed_lines, is_active_player))
+                        board.cross(turn, self.completed_lines, is_active_player)
             for parameter_type in range(9):
                 if parameter_type % 2 == 0 and parameter_type != 8:
                     situation_value = board.row_numbers[parameter_type // 2]
