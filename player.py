@@ -24,17 +24,14 @@ class CrossPossibility(object):
 
 class Player(ABC):
     """makes all decision for doing crosses and informs the player about the state of the boards"""
-    def __init__(self, name, opponents, ui=None):
+    def __init__(self, name, opponents, ui=None):        # !!! remember to reset all variables update start_new_game !!!
         self.name = name
         self.opponents = opponents
         self.ui = ui
         self.board = Board()         # own board
         self.others = []
         for opponent_index in range(self.opponents):
-            self.others.append(Board())     # list with board of the others # todo avoid duplicated boards
-        self.wish = (-1, -1)
-        self.completed_lines = [False, False, False, False]
-        self.lst_eyes = [0, 0, 0, 0, 0, 0]
+            self.others.append(Board())     # list with board of the others # todo #1 avoid duplicated boards
 
     def start_new_game(self) -> None:
         """sets up a new game"""
@@ -57,7 +54,7 @@ class Player(ABC):
         self.ui.lst_eyes = lst_eyes
         self.ui.is_active_player = False
 
-    def inform(self, boards, completed_lst, own_index) -> None:
+    def inform(self, boards, own_index) -> None:
         """informs about boards of all players and updates the knowledge about completed lines/rows"""
         self.board = boards[own_index]
         self._update_ui()
@@ -68,7 +65,6 @@ class Player(ABC):
                 self.others[player_index] = boards[player_index]
             else:
                 self.others[player_index - 1] = boards[player_index]
-        self.completed_lines = completed_lst
 
     def inform_about_invalid_turn(self) -> None:
         """informs UI about an invalid turn done by the (human) player"""
@@ -89,7 +85,7 @@ class Player(ABC):
             return
         self.ui.show_options_on_board(possibility_lst)
 
-    def _get_situation(self, is_active_player=None, turns=None):
+    def _get_situation(self, completed_lines=None, is_active_player=None, turns=None):
         """creates an numpy array (situation) that describes all boards"""
         if turns is None:
             turns = [None]
@@ -98,13 +94,13 @@ class Player(ABC):
         for player_index in range(player_count):
             # highest player_index is the own index
             if player_index < self.opponents:
-                board = self.others[player_index]
+                board = self.others[player_index] # todo #1 pass list as function parameter with board of all players, player knows own index
             else:
                 board = deepcopy(self.board)
-                for turn in turns:
+                for turn in turns:                          # todo split -> with/without turns
                     if turn is not None:
                         assert(is_active_player is not None)
-                        board.cross(turn, self.completed_lines, is_active_player)
+                        board.cross(turn, completed_lines, is_active_player)
             for parameter_type in range(9):
                 if parameter_type % 2 == 0 and parameter_type != 8:
                     situation_value = board.row_numbers[parameter_type // 2]
@@ -117,7 +113,7 @@ class Player(ABC):
 
     @staticmethod
     def _get_points_situation_(situation):
-        """calculates current points of all player"""
+        """calculates current points of all players"""
         player_count = int(len(situation) / 9)
         player_situation_sums = []
         points_situation = np.zeros((player_count * 5,))  # we ignore row limits

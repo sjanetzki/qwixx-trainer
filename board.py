@@ -60,7 +60,8 @@ class Board:
     def _make_colored_cross(self, eyes, row, completed_lines):
         """make cross in a colored row"""
         assert (eyes in range(2, 13))
-        assert (not completed_lines[row])    # row closed -> no crosses can be made there anymore
+        if completed_lines[row]:
+            assert (not completed_lines[row])    # row closed -> no crosses can be made there anymore
         if row in (Row.RED, Row.YELLOW):
             cross_last_number = eyes == 12
         else:

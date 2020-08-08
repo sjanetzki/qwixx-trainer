@@ -40,7 +40,7 @@ class AiPlayer(Player):     # todo add type annotations
     def cross_active(self, lst_eyes, valid_turns) -> List[CrossPossibility]:
         """crosses the best known active turn"""
         super().cross_active(lst_eyes, valid_turns)
-        sleep(1)
+        # sleep(1)
         return self._find_best_turns(valid_turns, True)
 
     def cross_passive(self, lst_eyes, valid_turns):

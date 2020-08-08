@@ -142,7 +142,7 @@ class Game:
             assert (len(turns) == 1)
             is_turn_valid = self._make_valid_turn(player_index, turns[0], valid_turns, is_active_player)
             previous_turn = turns[0]
-        self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
+        self.lst_player[player_index].inform(self.lst_boards, player_index)
 
         turn_index += 1
         is_turn_valid = False
@@ -177,29 +177,31 @@ class Game:
             if len(turns) == 2:
                 is_turn_valid = self._make_valid_turn(player_index, turns[1], valid_turns, is_active_player, turns[0])
 
-    def _direct_turns_of_all_players(self) -> None:
-        """directs when the players are prompted to do their turns"""
-        for active_player_index in range(self.player_count):
-            lst_eyes = self.dice.throw_dice()
-            for player_index in range(self.player_count):
-                player = self.lst_player[player_index]
-                is_active_player = player_index == active_player_index
-                if isinstance(player, HumanPlayer) and is_active_player:
-                    self._make_turns_for_active_human_player(lst_eyes, player_index, player, is_active_player)
-                else:
-                    self._make_turns_for_ai_or_passive_human_player(lst_eyes, player_index, player, is_active_player)
-
-            # inform all players about new game situation AFTER they made their turns
-            for player_index in range(self.player_count):
-                self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
-            if self._is_completed():
-                print(self.compute_ranking())
-                exit(0)  # print results
-
     def play(self) -> None:
-        """manages the run of a game (Game Master) until the game is completed; also used by the trainer"""
-        while True:
-            self._direct_turns_of_all_players()
+        """manages the run of a game (Game Master) until the game is completed; directs when the players are prompted to
+         do their turns; also used by the trainer"""
+        game_in_progress = True
+        while game_in_progress:
+            for active_player_index in range(self.player_count):
+                lst_eyes = self.dice.throw_dice()
+                for player_index in range(self.player_count):
+                    player = self.lst_player[player_index]
+                    is_active_player = player_index == active_player_index
+                    if isinstance(player, HumanPlayer) and is_active_player:
+                        self._make_turns_for_active_human_player(lst_eyes, player_index, player, is_active_player)
+                    else:
+                        self._make_turns_for_ai_or_passive_human_player(lst_eyes, player_index, player,
+                                                                        is_active_player)
+                if self._is_completed():
+                    print(self.compute_ranking())
+                    game_in_progress = False
+
+                # inform all players about new game situation AFTER they made their turns
+                for player_index in range(self.player_count):
+                    self.lst_player[player_index].inform(self.lst_boards, player_index)
+
+                if not game_in_progress:
+                    break                   # todo execute turns for all players and evaluate turns (separate)
 
 
 if __name__ == "__main__":
