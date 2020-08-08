@@ -1,11 +1,10 @@
-"""This file creates the players of Qwixx, devides them into subclasses (human, SimpleBot, and AI) and is the place
+"""This file creates the players of Qwixx, divides them into subclasses (human, SimpleBot, and AI) and is the place
 where decisions are made."""
 
 from board import Board, Row
 import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABC
 from copy import deepcopy
-
 
 
 class CrossPossibility(object):
@@ -37,28 +36,28 @@ class Player(ABC):
         self.completed_lines = [False, False, False, False]
         self.lst_eyes = [0, 0, 0, 0, 0, 0]
 
-    def start_new_game(self):
+    def start_new_game(self) -> None:
         """sets up a new game"""
         self.board = Board()
         self.others = []
         for opponent_index in range(self.opponents):
             self.others.append(Board())
 
-    def cross_active(self, lst_eyes, valid_turns):
+    def cross_active(self, lst_eyes, valid_turns) -> None:
         """gives UI information about (active) crosses to make"""
         if self.ui is None:
             return
         self.ui.lst_eyes = lst_eyes
         self.ui.is_active_player = True
 
-    def cross_passive(self, lst_eyes, valid_turns):
+    def cross_passive(self, lst_eyes, valid_turns) -> None:
         """gives UI information about (passive) crosses to make"""
         if self.ui is None:
             return
         self.ui.lst_eyes = lst_eyes
         self.ui.is_active_player = False
 
-    def inform(self, boards, completed_lst, own_index):
+    def inform(self, boards, completed_lst, own_index) -> None:
         """informs about boards of all players and updates the knowledge about completed lines/rows"""
         self.board = boards[own_index]
         self._update_ui()
@@ -71,18 +70,24 @@ class Player(ABC):
                 self.others[player_index - 1] = boards[player_index]
         self.completed_lines = completed_lst
 
-    def inform_about_invalid_turn(self):
+    def inform_about_invalid_turn(self) -> None:
         """informs UI about an invalid turn done by the (human) player"""
         assert(self.ui is not None)
         self.ui.is_turn_invalid = True
 
-    def _update_ui(self):
+    def _update_ui(self) -> None:
         """updates crosses on the UI"""
         if self.ui is None:
             return
         self.ui.penalties = self.board.penalties
         self.ui.crosses_by_color = self.board.crosses_by_color
         self.ui.show_board()
+
+    def show_options(self, possibility_lst) -> None:
+        """gives the UI the order to show possible fields to make a cross on"""
+        if self.ui is None:
+            return
+        self.ui.show_options_on_board(possibility_lst)
 
     def _get_situation(self, is_active_player=None, turns=None):
         """creates an numpy array (situation) that describes all boards"""
@@ -133,12 +138,12 @@ class Player(ABC):
         """returns points of own situation"""
         return self._get_points_situation_(self._get_situation())[-1]  # todo calculate points only for this player
 
-    def display(self):
+    def display(self) -> None:
         """prints the own board"""
         print("number of opponents: {}".format(self.opponents))
         print("{}´s BOARD: ".format(self.name))
         self.board.show()
 
-    def end(self, points):
+    def end(self, points) -> None:
         """prints the own points"""
         print(self.name + "´s" + " points: {}".format(points))

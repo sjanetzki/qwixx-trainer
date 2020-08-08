@@ -15,7 +15,7 @@ class Board:
     """does everything that happens on the board"""
     def __init__(self):
         self.penalties = 0
-        self.crosses_by_color = [set(), set(), set(), set()]
+        self.crosses_by_color = [set(), set(), set(), set()]        # Instanzvariabeln
 
     @property
     def row_limits(self):
@@ -41,28 +41,6 @@ class Board:
         for color, crosses in enumerate(self.crosses_by_color):
             row_numbers[color] = len(crosses)
         return row_numbers
-
-    def show(self) -> None:
-        """prints the board as a string"""
-        row = [0, 1, 2, 3]
-
-        row[0] = [" 2", " 3", " 4", " 5", " 6", " 7", " 8", " 9", "10", "11", "12", " 0"]
-        row[1] = [" 2", " 3", " 4", " 5", " 6", " 7", " 8", " 9", "10", "11", "12", " 0"]
-        row[2] = ["12", "11", "10", " 9", " 8", " 7", " 6", " 5", " 4", " 3", " 2", " 0"]
-        row[3] = ["12", "11", "10", " 9", " 8", " 7", " 6", " 5", " 4", " 3", " 2", " 0"]
-
-        join_r = ' '.join(row[0])
-        join_y = ' '.join(row[1])
-        join_g = ' '.join(row[2])
-        join_b = ' '.join(row[3])
-        print("red:    {}".format(join_r))
-        print("yellow: {}".format(join_y))
-        print("green:  {}".format(join_g))
-        print("blue:   {}".format(join_b))
-        if self.penalties == 0:
-            print("penalties: 0")
-        else:
-            print("penalties: {}".format(self.penalties))
 
     def cross(self, position, completed_lines, is_active_player):
         """sets the crosses chosen by the player after checking their validity"""

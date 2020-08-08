@@ -12,7 +12,7 @@ class PyGameUi(object):
     scale_factor = 2/3
 
     # define colors
-    black = (0, 0, 0)
+    black = (0, 0, 0)               # Klassenvariabeln
     dark_grey = (120, 120, 120)
     light_grey = (205, 205, 205)
     white = (255, 255, 255)
@@ -29,7 +29,7 @@ class PyGameUi(object):
     green_vibrant = (62, 224, 109)
     red_vibrant = (255, 0, 20)
 
-    # define lenghts, coordinates, and proportions of objects appearing on the board
+    # define lengths, coordinates, and proportions of objects appearing on the board
     screen_x_length = int(1216 * scale_factor)
     screen_y_length = int(650 * scale_factor)
     box_x = int(32 * scale_factor)
@@ -42,6 +42,7 @@ class PyGameUi(object):
     button_y = int(50 * scale_factor)
     button_x = button_y
     button_text_y = int(70 * scale_factor)
+    button_mark_y = int(50 * scale_factor)      # here
     circle_diameter = int(72 * scale_factor)
     circle_radius = circle_diameter // 2
     circle_x = int(1112 * scale_factor)
@@ -56,8 +57,8 @@ class PyGameUi(object):
     penalty_button_x_offset = int(146 * scale_factor)
     penalty_text_x_offset = int(16 * scale_factor)
     penalty_text_y_offset = (penalty_box_y_length - penalty_button_length) // 2
-    skip_button_x = int(590 * scale_factor)
-    skip_button_x_length = int(170 * scale_factor)
+    skip_button_x = int(680 * scale_factor)
+    skip_button_x_length = int(75 * scale_factor)
     dice_text_x_offset = int(225 * scale_factor)
     dice_text_y_offset = int(40 * scale_factor)
     player_mode_x_offset = int(205 * scale_factor)
@@ -97,7 +98,7 @@ class PyGameUi(object):
         clock.tick(60)
         pygame.display.flip()
 
-    def _render_colored_rows(self, font, lock):
+    def _render_colored_rows(self, font, lock) -> None:
         """draws the colored rows and creates buttons in these lines"""
         for row in range(4):
             for event in pygame.event.get():  # User did something
@@ -123,7 +124,7 @@ class PyGameUi(object):
                                     PyGameUi.circle_y * (row + 1) + PyGameUi.circle_radius * (
                                                 row - 1) + PyGameUi.circle_text_y_offset])
 
-    def _render_penalties(self, font):
+    def _render_penalties(self, font) -> None:
         """draws the penalty row and creates four buttons in that line"""
         pygame.draw.rect(self.screen, PyGameUi.light_grey,
                          [PyGameUi.penalty_box_x, PyGameUi.penalty_box_y, PyGameUi.penalty_box_x_length,
@@ -135,7 +136,7 @@ class PyGameUi(object):
         self.screen.blit(text, [PyGameUi.penalty_box_x + PyGameUi.penalty_text_x_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
-    def _render_skip_button(self, font):
+    def _render_skip_button(self, font) -> None:
         """draws a skip button"""
         pygame.draw.rect(self.screen, PyGameUi.light_grey,
                          [PyGameUi.skip_button_x, PyGameUi.penalty_box_y, PyGameUi.skip_button_x_length,
@@ -146,7 +147,7 @@ class PyGameUi(object):
         self.screen.blit(text, [PyGameUi.skip_button_x + PyGameUi.penalty_text_y_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
 
-    def _render_dice(self, font):
+    def _render_dice(self, font) -> None:
         """renders the dice onto the board"""
         for dice in range(len(self.lst_eyes)):
             text = font.render("{}".format(self.lst_eyes[dice]), True, self.convert_number_to_color(dice, True))
@@ -158,7 +159,29 @@ class PyGameUi(object):
         self.screen.blit(text, [PyGameUi.box_x + PyGameUi.dice_text_x_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.dice_text_y_offset])
 
-    def _show_player_mode(self, font):
+    def show_options_on_board(self, possibility_lst) -> None:
+        """marks the fields that can be crossed for a turn"""
+        font = pygame.font.SysFont('Comic Sans MS', PyGameUi.font_numbers_size, True, False)
+
+        for possibility in possibility_lst:
+            if len(possibility) == 0 or possibility[0].row == 4:
+                continue
+            # don't have to look at double turns because fields are marked anyway in single turn option
+            row = possibility[0].row
+            eyes = int(possibility[0].eyes)
+            assert (eyes is not None)
+            text = font.render("°", True, PyGameUi.black)
+            if row < 2:
+                self.screen.blit(text, [PyGameUi.button_length + PyGameUi.button_x_distance * (eyes - 2),
+                                        PyGameUi.box_y_distance * row + PyGameUi.button_mark_y])
+            else:
+                self.screen.blit(text, [PyGameUi.button_length + PyGameUi.button_x_distance * (12 - eyes),
+                                        PyGameUi.box_y_distance * row + PyGameUi.button_mark_y])
+                clock = pygame.time.Clock()
+                clock.tick(5)
+                pygame.display.flip()
+
+    def _show_player_mode(self, font) -> None:
         """shows whether the player is active or passive """
         if self.is_active_player:
             player_mode = "active player"
@@ -168,7 +191,7 @@ class PyGameUi(object):
         self.screen.blit(text, [PyGameUi.box_x + PyGameUi.player_mode_x_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.player_mode_y_offset])
 
-    def get_turn(self):
+    def get_turn(self) -> CrossPossibility:
         """waits for a player's action, returns it, and resets it"""
         while self.last_action is None:
             self.show_board()
@@ -176,7 +199,7 @@ class PyGameUi(object):
         self.last_action = None
         return last_action
 
-    def button(self, eyes, w, h, inactive_color, active_color, circle=False):
+    def button(self, eyes, w, h, inactive_color, active_color, circle=False) -> None:
         """makes the appearance of buttons interactive"""
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
@@ -188,7 +211,7 @@ class PyGameUi(object):
         else:
             self._choose_color_for_button_independently_of_mouse(x, y, w, h, active_color, inactive_color, circle)
 
-    def _choose_color_for_button_under_mouse(self, x, y, w, h, active_color, click, circle):
+    def _choose_color_for_button_under_mouse(self, x, y, w, h, active_color, click, circle) -> None:
         """choose color for button when the cursor is pointed at it"""
         if circle:
             pygame.draw.circle(self.screen, active_color, [x, y], w // 2, 0)
@@ -197,7 +220,7 @@ class PyGameUi(object):
         if click[0] == 1:
             self._click_button(x, active_color)
 
-    def _choose_color_for_button_independently_of_mouse(self, x, y, w, h, active_color, inactive_color, circle):
+    def _choose_color_for_button_independently_of_mouse(self, x, y, w, h, active_color, inactive_color, circle) -> None:
         """choose color for button when the cursor isn't pointed at it"""
         eyes = PyGameUi.convert_coordinates_to_eyes(active_color, x)
         if active_color == PyGameUi.red_vibrant and eyes in self.crosses_by_color[0]:
@@ -242,7 +265,7 @@ class PyGameUi(object):
             self.last_action = "skip"
 
     @staticmethod
-    def close():
+    def close() -> None:
         """closes the game"""
         pygame.quit()
 
@@ -253,7 +276,7 @@ class PyGameUi(object):
                 (circle and x - w / 2 < mouse[0] < x + w / 2 and y - h / 2 < mouse[1] < y + h / 2)
 
     @staticmethod
-    def convert_coordinates_to_eyes(row, x):
+    def convert_coordinates_to_eyes(row, x) -> float:
         """converts the coordinates of a button to the number on the button (or the index of the penalty)"""
         if row in (PyGameUi.red_vibrant, PyGameUi.yellow_vibrant):
             return (x - PyGameUi.button_x) // PyGameUi.button_x_distance + 2  # + 2 because eyes in index from 0 -11 -> 2 - 13
@@ -264,7 +287,7 @@ class PyGameUi(object):
                         PyGameUi.penalty_button_length + PyGameUi.penalty_text_y_offset)
 
     @staticmethod
-    def convert_eyes_to_coordinates(row, eyes, circle):
+    def convert_eyes_to_coordinates(row, eyes, circle) -> tuple: # todo is tuple the right type?
         """converts the number on a button (or the index of a penalty) to the coordinates of the button"""
         assert (row in range(6))
         if circle:
@@ -282,7 +305,7 @@ class PyGameUi(object):
         return PyGameUi.skip_button_x, PyGameUi.penalty_box_y
 
     @staticmethod
-    def convert_color_to_row(color):
+    def convert_color_to_row(color) -> int:
         """converts the color of a button to a row number"""
         if color == PyGameUi.red_vibrant:
             return 0
@@ -298,7 +321,7 @@ class PyGameUi(object):
             return 5
 
     @staticmethod
-    def convert_number_to_color(number, is_dice=False):
+    def convert_number_to_color(number, is_dice=False) -> tuple:
         """converts numbers of dice or rows to one or a tuple of colors"""
         if is_dice:
             if number in (0, 1):
@@ -327,3 +350,6 @@ class PyGameUi(object):
 if __name__ == "__main__":
     pygame_board = PyGameUi()
     pygame_board.show_board()
+
+# test driven development (tdd -> bool), show possible turns on UI
+# done: skip button, play, ranking,python tutorials,

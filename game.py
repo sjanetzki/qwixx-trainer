@@ -40,7 +40,7 @@ class Game:
             return True
         return False
 
-    def compute_ranking(self):
+    def compute_ranking(self) -> List[List[tuple]]:
         """computes a ranking of the players by points after the game is completed; function used by trainer"""
         ranking = []
         if not self._is_completed():
@@ -51,7 +51,7 @@ class Game:
         ranking = sorted(ranking, key=lambda x: x[1], reverse=True)
         return ranking
 
-    def _make_valid_turn(self, player_index, turn, valid_turns, is_active_player, previous_turn=None):
+    def _make_valid_turn(self, player_index, turn, valid_turns, is_active_player, previous_turn=None) -> bool:
         """checks validity of a turn"""
         is_turn_valid = False
         # check whether first turn and, if applicable, both turns combined, are valid
@@ -130,12 +130,13 @@ class Game:
                 possibilities_white_plus_a_dice.append([CrossPossibility(row, white_plus_a_dice_sum)])
         return possibilities_white_plus_a_dice
 
-    def _make_turns_for_active_human_player(self, lst_eyes, player_index, player, is_active_player):
+    def _make_turns_for_active_human_player(self, lst_eyes, player_index, player, is_active_player) -> None:
         """lets a human player cross active until the turn chosen is valid"""
         is_turn_valid = False
         turn_index = 0
         valid_turns = self._get_possibilities_active(lst_eyes, player_index)
         previous_turn = None
+        self.lst_player[player_index].show_options(self._get_possibilities_active(lst_eyes, player_index))
         while not is_turn_valid:
             turns = player.cross_active(lst_eyes, valid_turns, turn_index)
             assert (len(turns) == 1)
@@ -145,6 +146,7 @@ class Game:
 
         turn_index += 1
         is_turn_valid = False
+        self.lst_player[player_index].show_options(self._get_possibilities_passive(lst_eyes, player_index))
         # only allow 2nd if previous turn was done with WHITE dice
         while not is_turn_valid and previous_turn.row != 4 and previous_turn.eyes == lst_eyes[0] + lst_eyes[1]:
             turns = player.cross_active(lst_eyes, valid_turns, turn_index)
@@ -155,7 +157,7 @@ class Game:
             else:
                 is_turn_valid = True
 
-    def _make_turns_for_ai_or_passive_human_player(self, lst_eyes, player_index, player, is_active_player):
+    def _make_turns_for_ai_or_passive_human_player(self, lst_eyes, player_index, player, is_active_player) -> None:
         """lets an AI player (passive or active) or passive human player cross until the turn chosen is valid """
         is_turn_valid = False
         while not is_turn_valid:
@@ -175,10 +177,10 @@ class Game:
             if len(turns) == 2:
                 is_turn_valid = self._make_valid_turn(player_index, turns[1], valid_turns, is_active_player, turns[0])
 
-    def _direct_turns_of_all_players(self):
+    def _direct_turns_of_all_players(self) -> None:
         """directs when the players are prompted to do their turns"""
         for active_player_index in range(self.player_count):
-            lst_eyes = self.dice.throw()
+            lst_eyes = self.dice.throw_dice()
             for player_index in range(self.player_count):
                 player = self.lst_player[player_index]
                 is_active_player = player_index == active_player_index
@@ -191,6 +193,7 @@ class Game:
             for player_index in range(self.player_count):
                 self.lst_player[player_index].inform(self.lst_boards, self.completed_lines, player_index)
             if self._is_completed():
+                print(self.compute_ranking())
                 exit(0)  # print results
 
     def play(self) -> None:

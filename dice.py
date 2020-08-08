@@ -6,7 +6,7 @@ class Dice:
     def __init__(self, sides=6):
         self.sides = sides
 
-    def throw(self):
+    def throw_dice(self):
         """creates a random list of eyes of 6 dice"""
         lst_eyes = []
         for i in range(6):             # 6 dice in game qwixx
