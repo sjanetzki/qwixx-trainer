@@ -5,6 +5,7 @@ import numpy as np
 from numpy import random
 import random
 from typing import List
+import pickle
 
 
 class Trainer:
@@ -18,15 +19,14 @@ class Trainer:
     caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
     caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def __init__(self, group_size=2, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
-                 generations=300, saved_ais_rate=0.15):
+    def __init__(self, group_size=2, population_size=10, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
+                 generations=10):
         self.group_size = group_size
         self.population_size = population_size
         self.survivor_rate = survivor_rate
         self.child_rate = child_rate
         self.mutation_rate = mutation_rate
         self.generations = generations
-        self.saved_ais_rate = saved_ais_rate
 
     def _group(self, population) -> List[AiPlayer]:
         """puts the individuals (AIs) of a population into random groups of the same size"""
@@ -104,12 +104,15 @@ class Trainer:
         # [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
         return population
 
-    def _find_max_points(self, population):
-        """finds the highest points that were scored in a generation"""
-        max_points = -100
+    def _find_strongest_ai(self, population):
+        """finds the highest scoring ai in a population"""
+        max_points = float("-inf")
+        strongest_ai = None
         for ai in population:
-            max_points = max(ai.get_points(), max_points)
-        return max_points
+            if max_points < ai.get_points():
+                max_points = ai.get_points()
+                strongest_ai = ai
+        return strongest_ai
 
     def _find_avg_points(self, population):
         """calculates the average points that were scored in an generation"""
@@ -121,8 +124,6 @@ class Trainer:
     def _compute_next_generation(self, population) -> List[AiPlayer]:
         """directs all steps that have to be done to create the next generation / a (partly) new population"""
         population = self._select(population)
-        best_ais = population[:int(self.population_size*self.saved_ais_rate)]
-        self._save_best_ais(best_ais)
         population = self._recombine(population)
         population = self._mutate(population)
         population = self._add_random_ais(population)
@@ -147,27 +148,19 @@ class Trainer:
         population = self._rank(population)
         for generation in range(self.generations):
             new_population = self._compute_next_generation(population)
-            max_points = self._find_max_points(new_population)
+            max_points = self._find_strongest_ai(new_population).get_points()
             new_avg_points = self._find_avg_points(new_population)
             avg_points = new_avg_points
             population = new_population
             print("Generation: {} \t Max: {} \t Avg: {}".format(generation, max_points, avg_points))
         print("evolution finished")
-        best_ai = population[0]
+        best_ai = self._find_strongest_ai(population)
+        self._save_best_ai(best_ai)
         return best_ai
 
-    def _save_best_ais(self, best_ais):
+    def _save_best_ai(self, best_ai):
         """saves the best AI of a train cycle """
-        np.save("best_ais_file", best_ais, allow_pickle=True, fix_imports=True)      # todo where is the file saved?
-        # os.system("cmd")
-        # best_ais = [best_ais]
-        # pickle.dump(best_ais, open("best_ais.dat", "wb"))        # todo test function -> doesn't work
-
-    def _load_best_ais(self):                                # todo apply function
-        """loads the AIs that were saved"""
-        # best_ais = np.load(best_ais_file.npy)
-        best_ais = np.load("best_ais_file")
-        return best_ais
+        pickle.dump(best_ai, open("best_ai.dat", "wb"))        # todo date in name
 
 
 if __name__ == "__main__":

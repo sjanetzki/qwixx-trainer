@@ -1,8 +1,6 @@
 """This file creates the 'brain' of an AI-player -> place of decision process what to do in the next turn"""
-from board import Row
 from player import CrossPossibility, Player
 from typing import List
-from time import sleep
 import math
 
 
@@ -47,5 +45,3 @@ class AiPlayer(Player):     # todo add type annotations
         """crosses the best known passive turn"""
         super().cross_passive(lst_eyes, valid_turns)
         return self._find_best_turns(valid_turns, False)
-
-

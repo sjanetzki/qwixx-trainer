@@ -9,7 +9,7 @@ class PyGameUi(object):
     """creates a board with PyGame to interact with (as a human Player) in conformity with the rules"""
     pygame.init()
 
-    scale_factor = 2/3
+    scale_factor = 1/2
 
     # define colors
     black = (0, 0, 0)               # Klassenvariabeln
@@ -351,5 +351,5 @@ if __name__ == "__main__":
     pygame_board = PyGameUi()
     pygame_board.show_board()
 
-# test driven development (tdd -> bool), show possible turns on UI
-# done: skip button, play, ranking,python tutorials,
+# test driven development (tdd -> bool)
+# done: skip button, play, ranking,python tutorials,  show possible turns on UI

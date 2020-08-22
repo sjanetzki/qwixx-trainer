@@ -8,6 +8,7 @@ from human_player import HumanPlayer
 from player import CrossPossibility
 from ui_pygame import PyGameUi
 import numpy as np
+import pickle
 
 
 class Game:
@@ -204,11 +205,21 @@ class Game:
                     break                   # todo execute turns for all players and evaluate turns (separate)
 
 
+def load_best_ai():
+    """loads the AI that was saved"""
+    file = open("best_ai.dat", "rb")
+    best_ai = pickle.load(file)
+    file.close()
+    return best_ai
+
+
 if __name__ == "__main__":
     ui = PyGameUi()
     ui.show_board()
-    # game = Game([AiPlayer("meep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18), ui),
-    # AiPlayer("gans", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
-    game = Game([HumanPlayer("meep", 2, ui),
-                 AiPlayer("meeep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
+    ai_opponent = load_best_ai()
+
+    # game = Game([HumanPlayer("meep", 2, ui),
+                 # AiPlayer("meeep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
+
+    game = Game([HumanPlayer("meep", 2, ui), ai_opponent])
     game.play()
