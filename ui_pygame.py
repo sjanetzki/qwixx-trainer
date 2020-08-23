@@ -9,7 +9,7 @@ class PyGameUi(object):
     """creates a board with PyGame to interact with (as a human Player) in conformity with the rules"""
     pygame.init()
 
-    scale_factor = 1/2
+    scale_factor = 3/4
 
     # define colors
     black = (0, 0, 0)               # Klassenvariabeln

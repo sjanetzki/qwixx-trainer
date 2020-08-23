@@ -111,34 +111,22 @@ class Player(ABC):
                 situation[player_count * parameter_type + player_index] = situation_value
         return situation
 
-    @staticmethod
-    def _get_points_situation_(situation):
-        """calculates current points of all players"""
-        player_count = int(len(situation) / 9)
-        player_situation_sums = []
-        points_situation = np.zeros((player_count * 5,))  # we ignore row limits
-        for situation_index in range(player_count * 4):
-            colored_row_number = situation[situation_index]
-            points_situation[situation_index] = (colored_row_number ** 2 + colored_row_number) / 2
-        for situation_index in range(player_count * 4, player_count * 5):
-            penalty = situation[situation_index]
-            points_situation[situation_index] = penalty * (-5)
-        for player_index in range(player_count):
-            sum_points = 0
-            for parameter_type in range(5):
-                sum_points += points_situation[player_count * parameter_type + player_index]
-            player_situation_sums.append(sum_points)
-        return player_situation_sums
-
     def get_points(self):
-        """returns points of own situation"""
-        return self._get_points_situation_(self._get_situation())[-1]  # todo calculate points only for this player
+        """calculates current points of a player"""
+        situation = self._get_situation()
+        player_count = int(len(situation) / 9)
+        player_points = 0
+        player_index = player_count - 1
 
-    def display(self) -> None:
-        """prints the own board"""
-        print("number of opponents: {}".format(self.opponents))
-        print("{}´s BOARD: ".format(self.name))
-        self.board.show()
+        # gives points for number of crosses in a row
+        for row_start in range(0, player_count * 8, player_count * 2):  # will be called 4 times
+            colored_row_number = situation[row_start + player_index]
+            player_points += (colored_row_number ** 2 + colored_row_number) / 2
+
+        # calculates points for penalties
+        penalty = situation[player_count * 8 + player_index]
+        player_points += penalty * (-5)
+        return player_points
 
     def end(self, points) -> None:
         """prints the own points"""

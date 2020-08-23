@@ -35,7 +35,3 @@ class HumanPlayer(Player):
         if wish != "skip":
             return [wish]
         return []
-
-    def end(self, points):
-        """prints out the final score of the player"""
-        print("Your points: {}".format(points))

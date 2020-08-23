@@ -1,11 +1,11 @@
 """This file creates an algorithm (Game) that leads the game through its course"""
-from typing import List
+from typing import List, Tuple
 
 from dice import Dice
 from board import Board, Row
 from ai_player import AiPlayer
 from human_player import HumanPlayer
-from player import CrossPossibility
+from player import CrossPossibility, Player
 from ui_pygame import PyGameUi
 import numpy as np
 import pickle
@@ -41,11 +41,9 @@ class Game:
             return True
         return False
 
-    def compute_ranking(self) -> List[List[tuple]]:
+    def compute_ranking(self) -> List[Tuple[Player, int]]:
         """computes a ranking of the players by points after the game is completed; function used by trainer"""
         ranking = []
-        if not self._is_completed():
-            return None
         for player in self.lst_player:
             points = player.get_points()
             ranking.append((player, points))
@@ -178,7 +176,7 @@ class Game:
             if len(turns) == 2:
                 is_turn_valid = self._make_valid_turn(player_index, turns[1], valid_turns, is_active_player, turns[0])
 
-    def play(self) -> None:
+    def play(self, prints_points=False) -> None:
         """manages the run of a game (Game Master) until the game is completed; directs when the players are prompted to
          do their turns; also used by the trainer"""
         game_in_progress = True
@@ -193,8 +191,10 @@ class Game:
                     else:
                         self._make_turns_for_ai_or_passive_human_player(lst_eyes, player_index, player,
                                                                         is_active_player)
+                if prints_points:
+                    print(self.compute_ranking())
+
                 if self._is_completed():
-                    # print(self.compute_ranking())
                     game_in_progress = False
 
                 # inform all players about new game situation AFTER they made their turns
@@ -218,8 +218,8 @@ if __name__ == "__main__":
     ui.show_board()
     ai_opponent = load_best_ai()
 
-    # game = Game([HumanPlayer("meep", 2, ui),
-                 # AiPlayer("meeep", 2, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
+    # game = Game([HumanPlayer("meep", 1, ui),
+                 # AiPlayer("meeep", 1, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
 
-    game = Game([HumanPlayer("meep", 2, ui), ai_opponent])
-    game.play()
+    game = Game([HumanPlayer("meep", 1, ui), ai_opponent])
+    game.play(True)
