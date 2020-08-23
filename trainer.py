@@ -6,6 +6,7 @@ from numpy import random
 import random
 from typing import List
 import pickle
+from copy import copy
 
 
 class Trainer:
@@ -19,16 +20,18 @@ class Trainer:
     caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
     caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def __init__(self, group_size=2, population_size=10, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
-                 generations=10):
-        self.group_size = group_size
+    def __init__(self, group_size=2, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
+                 num_generations=10):
+        self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
-        self.survivor_rate = survivor_rate
-        self.child_rate = child_rate
         self.mutation_rate = mutation_rate
-        self.generations = generations
+        self.num_generations = num_generations
+        self.num_survivors = int(survivor_rate * self.population_size)
+        self.num_children = int((self.population_size - self.num_survivors) * child_rate)
+        self.num_parents = self.num_children * 2
+        self.fitness_game_limit = 10   # empiric value
 
-    def _group(self, population) -> List[AiPlayer]:
+    def _group(self, population) -> List[List[AiPlayer]]:
         """puts the individuals (AIs) of a population into random groups of the same size"""
         random.shuffle(population)
         groups = []
@@ -36,26 +39,70 @@ class Trainer:
             groups.append(population[ai_index: ai_index + self.group_size])
         return groups
 
-    def _rank(self, groups) -> List[AiPlayer]:
+    def _select_extreme_ais(self, point_sum_per_ai, num_extreme_ais, selects_best_ais) -> List[AiPlayer]:
+        """selects strongest or weakest AIs of a population"""
+        extreme_ais = []
+        for _ in range(num_extreme_ais):
+            max_points = float("-inf")
+            min_points = float("inf")
+            extreme_ai = None
+            for ai, points in point_sum_per_ai.items():
+                if selects_best_ais and max_points < points:
+                    max_points = points
+                    extreme_ai = ai
+                elif not selects_best_ais and min_points > points:
+                    min_points = points
+                    extreme_ai = ai
+            extreme_ais.append(extreme_ai)
+            del point_sum_per_ai[extreme_ai]
+        assert(None not in extreme_ais)
+        return extreme_ais
+
+
+    def _rank(self, population) -> List[AiPlayer]:  # todo split function at comments
         """lets the groups play and ranks them inside these groups by performance"""
-        placement_groups = [[] for _ in range(self.group_size)]
-        for group in groups:
-            game = Game(group)
-            game.play()
-            group_ranking = game.compute_ranking()
-            placement = 0
-            for ai, points in group_ranking:
-                placement_groups[placement].append(ai)
-                placement += 1
-        ranking = []
-        for placement_group in placement_groups:
-            ranking.extend(placement_group)
-        assert(len(ranking) == self.population_size)
+        point_sum_per_ai = dict()
+        last_strongest_ais = None
+        ranking = None
+        for ai in population:
+            point_sum_per_ai[ai] = 0
+
+        for game_count in range(self.fitness_game_limit):
+            # play in groups
+            groups = self._group(population)
+            for group in groups:
+                game = Game(group)
+                game.play()
+                for ai in group:
+                    point_sum_per_ai[ai] += ai.get_points()
+
+            # split AIs by fitness
+            point_sum_per_ai_temp = copy(point_sum_per_ai)
+            strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
+                                                     True)  # side-effect intentional
+            weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors,
+                                                   False)
+            middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
+
+            # create ranking
+            ranking = copy(strongest_ais)
+            ranking.extend(middle_field)
+            ranking.extend(weakest_ais)
+            assert(len(ranking) == self.population_size)
+
+            # check if strongest AIs are the same as in the last iteration
+            strongest_ais = set(strongest_ais)
+            if last_strongest_ais == strongest_ais:
+                for ai in strongest_ais:
+                    avg_points = point_sum_per_ai[ai] // game_count
+                    print("best avg points: {}".format(avg_points))
+                return ranking
+            last_strongest_ais = strongest_ais
         return ranking
 
     def _select(self, population_ranked) -> List[AiPlayer]:
         """selects the best AIs, these survive -> rate of survivors given by parameter"""
-        return population_ranked[0: int(self.survivor_rate * self.population_size)]  # slice operation
+        return population_ranked[: self.num_survivors]
 
     def _mix_strategies(self, parent1, parent2) -> AiPlayer:
         """mixes the strategies of the parents by creating averages of the different factors / bias to be their child's
@@ -70,8 +117,7 @@ class Trainer:
     def _recombine(self, population) -> List[AiPlayer]:
         """extends the population by children that are created by recombination of their parents strategies"""
         children = []
-        children_count = int((self.population_size - len(population)) * self.child_rate)  # = 25 (default value)
-        for child_index in range(children_count):  # build pairs
+        for child_index in range(self.num_children):  # build pairs
             child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1])
             children.append(child)
         population.extend(children)
@@ -127,7 +173,6 @@ class Trainer:
         population = self._recombine(population)
         population = self._mutate(population)
         population = self._add_random_ais(population)
-        population = self._group(population)
         population = self._rank(population)
         return population
 
@@ -144,9 +189,8 @@ class Trainer:
     def train(self) -> AiPlayer:
         """trains the AIs due to the parameters and returns the final and best AI"""
         population = self._build_initial_population()
-        population = self._group(population)
         population = self._rank(population)
-        for generation in range(self.generations):
+        for generation in range(self.num_generations):
             new_population = self._compute_next_generation(population)
             max_points = self._find_strongest_ai(new_population).get_points()
             new_avg_points = self._find_avg_points(new_population)

@@ -194,7 +194,7 @@ class Game:
                         self._make_turns_for_ai_or_passive_human_player(lst_eyes, player_index, player,
                                                                         is_active_player)
                 if self._is_completed():
-                    print(self.compute_ranking())
+                    # print(self.compute_ranking())
                     game_in_progress = False
 
                 # inform all players about new game situation AFTER they made their turns
