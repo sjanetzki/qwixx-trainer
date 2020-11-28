@@ -31,9 +31,10 @@ class Trainer:
         self.mutation_rate = mutation_rate
         self.num_generations = num_generations
         self.num_survivors = int(survivor_rate * self.population_size)
-        self.num_children = int((self.population_size - self.num_survivors) * child_rate)
+        self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
         self.fitness_game_limit = 10   # empiric value
+        self.points_per_ai = None
 
     def _group(self, population) -> List[List[AiPlayer]]:
         """puts the individuals (AIs) of a population into random groups of the same size"""
@@ -62,6 +63,10 @@ class Trainer:
         assert(None not in extreme_ais)
         return extreme_ais
 
+    def _compute_avg_points_per_ai(self, point_sum_per_ai, game_count):
+        self.points_per_ai = dict()
+        for ai, points in point_sum_per_ai.items():
+            self.points_per_ai[ai] = int(points / game_count)
 
     def _rank(self, population) -> List[AiPlayer]:  # todo split function at comments
         """lets the groups play and ranks them inside these groups by performance"""
@@ -71,7 +76,8 @@ class Trainer:
         for ai in population:
             point_sum_per_ai[ai] = 0
 
-        for game_count in range(self.fitness_game_limit):
+        game_count = 0
+        while game_count < self.fitness_game_limit:
             # play in groups
             groups = self._group(population)
             for group in groups:
@@ -97,11 +103,13 @@ class Trainer:
             # check if strongest AIs are the same as in the last iteration
             strongest_ais = set(strongest_ais)
             if last_strongest_ais == strongest_ais:
+                self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
                 for ai in strongest_ais:
-                    avg_points = point_sum_per_ai[ai] // game_count
-                    print("best avg points: {}".format(avg_points))
+                    print("best avg points: {}".format(self.points_per_ai[ai]))
                 return ranking
             last_strongest_ais = strongest_ais
+            game_count += 1
+        self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
         return ranking
 
     def _select(self, population_ranked) -> List[AiPlayer]:
@@ -158,17 +166,17 @@ class Trainer:
         max_points = float("-inf")
         strongest_ai = None
         for ai in population:
-            if max_points < ai.get_points():
-                max_points = ai.get_points()
+            if max_points < self.points_per_ai[ai]:
+                max_points = self.points_per_ai[ai]
                 strongest_ai = ai
-        return strongest_ai
+        return strongest_ai, max_points
 
     def _find_avg_points(self, population):
-        """calculates the average points that were scored in an generation"""
+        """calculates the average points that were scored in a generation"""
         sum_points = 0
         for ai in population:
-            sum_points += ai.get_points()       # todo avg from all games from one generation, same for max
-        return sum_points / self.population_size
+            sum_points += self.points_per_ai[ai]
+        return int(sum_points / self.population_size)
 
     def _compute_next_generation(self, population) -> List[AiPlayer]:
         """directs all steps that have to be done to create the next generation / a (partly) new population"""
@@ -194,13 +202,13 @@ class Trainer:
         population = self._rank(population)
         for generation in range(self.num_generations):
             new_population = self._compute_next_generation(population)
-            max_points = self._find_strongest_ai(new_population).get_points()
+            _, max_points = self._find_strongest_ai(new_population)
             new_avg_points = self._find_avg_points(new_population)
             avg_points = new_avg_points
             population = new_population
             print("Generation: {} \t Max: {} \t Avg: {}".format(generation, max_points, avg_points))
         print("evolution finished")
-        best_ai = self._find_strongest_ai(population)
+        best_ai, _ = self._find_strongest_ai(population)
         self._save_best_ai(best_ai)
         return best_ai
 

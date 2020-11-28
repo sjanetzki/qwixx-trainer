@@ -123,7 +123,7 @@ class Player(ABC):
         # gives points for number of crosses in a row
         for row_start in range(0, player_count * 8, player_count * 2):  # will be called 4 times
             colored_row_number = situation[row_start + player_index]
-            player_points += (colored_row_number ** 2 + colored_row_number) / 2
+            player_points += (colored_row_number ** 2 + colored_row_number) / 2  # counter(understand only with example): II
 
         # calculates points for penalties
         penalty = situation[player_count * 8 + player_index]
