@@ -1,4 +1,4 @@
 .idea/
-best_ai.dat
+*.dat
 venv/
 __pycache__/
