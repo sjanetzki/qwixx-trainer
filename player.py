@@ -40,14 +40,14 @@ class Player(ABC):
         for opponent_index in range(self.opponents):
             self.others.append(Board())
 
-    def cross_active(self, lst_eyes, valid_turns) -> None:
+    def cross_active(self, lst_eyes, valid_turns, completed_lines) -> None:
         """gives UI information about (active) crosses to make"""
         if self.ui is None:
             return
         self.ui.lst_eyes = lst_eyes
         self.ui.is_active_player = True
 
-    def cross_passive(self, lst_eyes, valid_turns) -> None:
+    def cross_passive(self, lst_eyes, valid_turns, completed_lines) -> None:
         """gives UI information about (passive) crosses to make"""
         if self.ui is None:
             return
@@ -85,10 +85,12 @@ class Player(ABC):
             return
         self.ui.show_options_on_board(possibility_lst)
 
-    def _get_situation(self, completed_lines=None, is_active_player=None, turns=None):
-        """creates an numpy array (situation) that describes all boards"""
-        if turns is None:
-            turns = [None]
+    def _get_current_situation(self):
+        """wrapper function to skip computation of hypothetical turns"""
+        return self._get_hypothetical_situation_after_turns(None, None, [None])
+
+    def _get_hypothetical_situation_after_turns(self, completed_lines, is_active_player, turns):
+        """creates an numpy array (situation) that describes all boards after turns"""
         player_count = self.opponents + 1
         situation = np.zeros((player_count * 9,))
         for player_index in range(player_count):
@@ -113,7 +115,7 @@ class Player(ABC):
 
     def get_points(self):
         """calculates current points of a player"""
-        situation = self._get_situation()
+        situation = self._get_current_situation()
         player_count = int(len(situation) / 9)
         player_points = 0
         player_index = player_count - 1

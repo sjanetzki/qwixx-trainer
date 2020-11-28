@@ -21,7 +21,7 @@ class Game:
         self.lst_boards = []
         for index in range(self.player_count):
             self.lst_boards.append(Board())
-        self.completed_lines = [False, False, False, False]
+        self.completed_lines = [False, False, False, False]     # anybody able to complete line --> variable in game and not board
         self.dice = Dice()
         for player in lst_player:
             player.start_new_game()
@@ -137,7 +137,7 @@ class Game:
         previous_turn = None
         self.lst_player[player_index].show_options(self._get_possibilities_active(lst_eyes, player_index))
         while not is_turn_valid:
-            turns = player.cross_active(lst_eyes, valid_turns, turn_index)
+            turns = player.cross_active(lst_eyes, valid_turns, self.completed_lines, turn_index)
             assert (len(turns) == 1)
             is_turn_valid = self._make_valid_turn(player_index, turns[0], valid_turns, is_active_player)
             previous_turn = turns[0]
@@ -148,7 +148,7 @@ class Game:
         self.lst_player[player_index].show_options(self._get_possibilities_passive(lst_eyes, player_index))
         # only allow 2nd if previous turn was done with WHITE dice
         while not is_turn_valid and previous_turn.row != 4 and previous_turn.eyes == lst_eyes[0] + lst_eyes[1]:
-            turns = player.cross_active(lst_eyes, valid_turns, turn_index)
+            turns = player.cross_active(lst_eyes, valid_turns, self.completed_lines, turn_index)
             assert (len(turns) <= 1)
             if len(turns) != 0:
                 is_turn_valid = self._make_valid_turn(player_index, turns[0], valid_turns, is_active_player,
@@ -162,11 +162,11 @@ class Game:
         while not is_turn_valid:
             if is_active_player:
                 valid_turns = self._get_possibilities_active(lst_eyes, player_index)
-                turns = player.cross_active(lst_eyes, valid_turns)
+                turns = player.cross_active(lst_eyes, valid_turns, self.completed_lines)
                 assert (1 <= len(turns) <= 2)
             else:
                 valid_turns = self._get_possibilities_passive(lst_eyes, player_index)
-                turns = player.cross_passive(lst_eyes, valid_turns)
+                turns = player.cross_passive(lst_eyes, valid_turns, self.completed_lines)
                 assert (len(turns) <= 1)
 
             if len(turns) == 0:
@@ -218,8 +218,15 @@ if __name__ == "__main__":
     ui.show_board()
     ai_opponent = load_best_ai()
 
+    caira_quadratic_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0])
+    caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
+    caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+
     # game = Game([HumanPlayer("meep", 1, ui),
                  # AiPlayer("meeep", 1, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
 
-    game = Game([HumanPlayer("meep", 1, ui), ai_opponent])
+    # game = Game([HumanPlayer("meep", 1, ui), ai_opponent])
+    game = Game([AiPlayer("", 1, caira_quadratic_factor, caira_linear_factor, caira_bias, ui),
+                 AiPlayer("", 1, caira_quadratic_factor, caira_linear_factor, caira_bias)])
     game.play(True)

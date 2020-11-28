@@ -16,12 +16,16 @@ class Trainer:
    # bodo_linear_factor = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
    # bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
 
-    caira_quadratic_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0])
-    caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
-    caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # caira_quadratic_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0])
+    # caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
+    # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+    # caira_quadratic_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0])
+    # caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
+    # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
     def __init__(self, group_size=2, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
-                 num_generations=10):
+                 num_generations=200):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -145,9 +149,8 @@ class Trainer:
         """adds random AIs to the population in order to reach the original population size"""
         missing_ais = self.population_size - len(population)
         population.extend(
-            [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
-                      Trainer.caira_bias) for _ in range(missing_ais)])     # todo not caira
-        # [AI("", self.group_size - 1, np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
+            [AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
+                      np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
         return population
 
     def _find_strongest_ai(self, population):
@@ -164,7 +167,7 @@ class Trainer:
         """calculates the average points that were scored in an generation"""
         sum_points = 0
         for ai in population:
-            sum_points += ai.get_points()
+            sum_points += ai.get_points()       # todo avg from all games from one generation, same for max
         return sum_points / self.population_size
 
     def _compute_next_generation(self, population) -> List[AiPlayer]:
@@ -178,13 +181,12 @@ class Trainer:
 
     def _build_initial_population(self) -> List[AiPlayer]:
         """builds the initial population as a list of AIs with random strategies"""
-        # return [AI("", self.group_size - 1, np.random.rand(self.group_size * 9), random.randint(-1, 1))for _ in
-        # range(self.population_size)]  # fill in linear_factor
-        return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
-                         Trainer.caira_bias)
-                for _ in range(self.population_size)]
-        # return [AI("", self.group_size - 1, np.zeros((self.group_size * 9,)), random.randint(-1, 1)) for _ in
-        # range(self.population_size)]
+        # return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
+                         # Trainer.caira_bias)
+                # for _ in range(self.population_size)]
+        return [
+            AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
+                     np.random.rand(self.group_size * 9)) for _ in range(self.population_size)]
 
     def train(self) -> AiPlayer:
         """trains the AIs due to the parameters and returns the final and best AI"""
