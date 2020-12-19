@@ -24,8 +24,8 @@ class Trainer:
     # caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
     # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def __init__(self, group_size=2, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.005,
-                 num_generations=200):
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.95, child_rate=1, mutation_rate=0,
+                 num_generations=10):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -107,6 +107,7 @@ class Trainer:
         game_count = 0
         while game_count < self.fitness_game_limit:
             self._play_in_groups(population, point_sum_per_ai)
+            game_count += 1
             ranking, strongest_ais = self._create_ranking(point_sum_per_ai)
             strongest_ais = set(strongest_ais)
 
@@ -118,7 +119,6 @@ class Trainer:
                 return ranking
             last_strongest_ais = strongest_ais
 
-            game_count += 1
         self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
         return ranking
 
