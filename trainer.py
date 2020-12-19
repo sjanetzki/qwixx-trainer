@@ -24,7 +24,7 @@ class Trainer:
     # caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
     # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.95, child_rate=1, mutation_rate=0,
+    def __init__(self, group_size=5, population_size=20, survivor_rate=0.95, child_rate=1, mutation_rate=0,
                  num_generations=10):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
@@ -96,7 +96,16 @@ class Trainer:
         assert (len(ranking) == self.population_size)
         return ranking, strongest_ais
 
-    def _rank(self, population) -> List[AiPlayer]:  # todo split function at comments
+    def _are_strongest_ais_reliable(self, last_strongest_ais, strongest_ais, point_sum_per_ai, game_count) -> bool:
+        """compares strongest ai in this round with strongest ai from round before"""
+        if last_strongest_ais == strongest_ais:
+            self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
+            # for ai in strongest_ais:
+            # print("best avg points: {}".format(self.points_per_ai[ai]))
+            return True
+        return False
+
+    def _rank(self, population) -> List[AiPlayer]:
         """lets the groups play and ranks them inside these groups by performance"""
         point_sum_per_ai = dict()
         last_strongest_ais = None
@@ -111,12 +120,9 @@ class Trainer:
             ranking, strongest_ais = self._create_ranking(point_sum_per_ai)
             strongest_ais = set(strongest_ais)
 
-            # compares strongest ai in this round with strongest ai from round before
-            if last_strongest_ais == strongest_ais:     # todo xmas -> extra function?
-                self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
-                # for ai in strongest_ais:
-                    # print("best avg points: {}".format(self.points_per_ai[ai]))
+            if self._are_strongest_ais_reliable(last_strongest_ais, strongest_ais, point_sum_per_ai, game_count):
                 return ranking
+
             last_strongest_ais = strongest_ais
 
         self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
