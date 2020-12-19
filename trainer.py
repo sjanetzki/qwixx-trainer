@@ -4,9 +4,19 @@ from game import Game
 import numpy as np
 from numpy import random
 import random
-from typing import List
+from typing import List, Tuple
 import pickle
 from copy import copy
+
+
+class AiLogEntry:
+    """data to track evolution of AIs across generations during training"""
+    def __init__(self, points, events):
+        self.points = points
+        self.events = events
+
+    def __repr__(self):
+        return "(" + str(self.points) + ", " + str(self.events) + ")"
 
 
 class Trainer:
@@ -24,7 +34,7 @@ class Trainer:
     # caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
     # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def __init__(self, group_size=5, population_size=20, survivor_rate=0.95, child_rate=1, mutation_rate=0,
+    def __init__(self, group_size=5, population_size=20, survivor_rate=0.80, child_rate=0.25, mutation_rate=0.005,
                  num_generations=10):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
@@ -35,6 +45,7 @@ class Trainer:
         self.num_parents = self.num_children * 2
         self.fitness_game_limit = 10   # empiric value
         self.points_per_ai = None
+        self.ai_histories = dict()
 
     def _group(self, population) -> List[List[AiPlayer]]:
         """puts the individuals (AIs) of a population into random groups of the same size"""
@@ -63,11 +74,15 @@ class Trainer:
         assert(None not in extreme_ais)
         return extreme_ais
 
-    def _compute_avg_points_per_ai(self, point_sum_per_ai, game_count):
+    def _compute_avg_points_per_ai(self, point_sum_per_ai, game_count, generation):
         """creates a dictionary with average points of every AI"""
         self.points_per_ai = dict()
         for ai, points in point_sum_per_ai.items():
             self.points_per_ai[ai] = int(points / game_count)
+            if generation in self.ai_histories[ai]:
+                self.ai_histories[ai][generation].points = self.points_per_ai[ai]
+            else:
+                self.ai_histories[ai][generation] = AiLogEntry(self.points_per_ai[ai], [])
 
     def _play_in_groups(self, population, point_sum_per_ai):
         """part of _rank(); lets AIs play in groups"""
@@ -96,16 +111,7 @@ class Trainer:
         assert (len(ranking) == self.population_size)
         return ranking, strongest_ais
 
-    def _are_strongest_ais_reliable(self, last_strongest_ais, strongest_ais, point_sum_per_ai, game_count) -> bool:
-        """compares strongest ai in this round with strongest ai from round before"""
-        if last_strongest_ais == strongest_ais:
-            self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
-            # for ai in strongest_ais:
-            # print("best avg points: {}".format(self.points_per_ai[ai]))
-            return True
-        return False
-
-    def _rank(self, population) -> List[AiPlayer]:
+    def _rank(self, population, generation) -> List[AiPlayer]:
         """lets the groups play and ranks them inside these groups by performance"""
         point_sum_per_ai = dict()
         last_strongest_ais = None
@@ -120,16 +126,23 @@ class Trainer:
             ranking, strongest_ais = self._create_ranking(point_sum_per_ai)
             strongest_ais = set(strongest_ais)
 
-            if self._are_strongest_ais_reliable(last_strongest_ais, strongest_ais, point_sum_per_ai, game_count):
-                return ranking
+            # check if strongest AIs are reliable
+            if last_strongest_ais == strongest_ais:
+                break
 
             last_strongest_ais = strongest_ais
 
-        self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
+        self._compute_avg_points_per_ai(point_sum_per_ai, game_count, generation)
         return ranking
 
-    def _select(self, population_ranked) -> List[AiPlayer]:
+    def _select(self, population_ranked, generation) -> List[AiPlayer]:
         """selects the best AIs, these survive -> rate of survivors given by parameter"""
+        dead_ais = population_ranked[self.num_survivors:]
+        for ai in dead_ais:
+            if generation in self.ai_histories[ai]:
+                self.ai_histories[ai][generation].events.append("SELEction")
+            else:
+                self.ai_histories[ai][generation] = AiLogEntry(None, ["SELEction"])
         return population_ranked[: self.num_survivors]
 
     def _mix_strategies(self, parent1, parent2) -> AiPlayer:
@@ -142,39 +155,53 @@ class Trainer:
             parent2.linear_factor))
         return AiPlayer("", self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
 
-    def _recombine(self, population) -> List[AiPlayer]:
+    def _recombine(self, population, generation) -> List[AiPlayer]:
         """extends the population by children that are created by recombination of their parents strategies"""
         children = []
         for child_index in range(self.num_children):  # build pairs
             child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1])
             children.append(child)
+            self.ai_histories[child] = dict()
+            self.ai_histories[child][generation] = AiLogEntry(None, ["RECOmbination"])
         population.extend(children)
         return population
 
-    def _mutate_strategy(self, ai) -> AiPlayer:
+    def _mutate_strategy(self, ai) -> int:
         """mutates randomly small parts of the strategy of an AI"""
+        mutation_counter = 0
         for value_index in range(len(ai.linear_factor)):
             if random.random() < self.mutation_rate:
                 ai.quadratic_factor[value_index] = random.random()
+                mutation_counter += 1
             if random.random() < self.mutation_rate:
                 ai.linear_factor[value_index] = random.random()
+                mutation_counter += 1
             if random.random() < self.mutation_rate:
                 ai.bias[value_index] = random.random()
-        return ai
+                mutation_counter += 1
+        return mutation_counter                 # call by reference on ai (pointer)
 
-    def _mutate(self, population) -> List[AiPlayer]:
+    def _mutate(self, population, generation) -> List[AiPlayer]:
         """creates a list of mutated AIs"""
-        mutated_population = []
         for ai in population:
-            self.append = mutated_population.append(self._mutate_strategy(ai))
-        return mutated_population
+            mutation_counter = self._mutate_strategy(ai)
+            if mutation_counter > 0:
+                if generation in self.ai_histories[ai]:
+                    self.ai_histories[ai][generation].events.append("MUTAtion, {}".format(mutation_counter))
+                else:
+                    self.ai_histories[ai][generation] = AiLogEntry(None, ["MUTAtion, {}".format(mutation_counter)])
+        return population               # was mutated by reference
 
-    def _add_random_ais(self, population) -> List[AiPlayer]:
+    def _add_random_ais(self, population, generation) -> List[AiPlayer]:
         """adds random AIs to the population in order to reach the original population size"""
         missing_ais = self.population_size - len(population)
-        population.extend(
-            [AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
-                      np.random.rand(self.group_size * 9)) for _ in range(missing_ais)])
+        ais = [
+            AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
+                     np.random.rand(self.group_size * 9)) for _ in range(missing_ais)]
+        for ai in ais:
+            self.ai_histories[ai] = dict()
+            self.ai_histories[ai][generation] = AiLogEntry(None, ["INITialization"])
+        population.extend(ais)
         return population
 
     def _find_strongest_ai(self, population):
@@ -194,13 +221,13 @@ class Trainer:
             sum_points += self.points_per_ai[ai]
         return int(sum_points / self.population_size)
 
-    def _compute_next_generation(self, population) -> List[AiPlayer]:
+    def _compute_next_generation(self, population, generation) -> List[AiPlayer]:
         """directs all steps that have to be done to create the next generation / a (partly) new population"""
-        population = self._select(population)
-        population = self._recombine(population)
-        population = self._mutate(population)
-        population = self._add_random_ais(population)
-        population = self._rank(population)
+        population = self._select(population, generation)
+        population = self._recombine(population, generation)
+        population = self._mutate(population, generation)
+        population = self._add_random_ais(population, generation)
+        population = self._rank(population, generation)
         return population
 
     def _build_initial_population(self) -> List[AiPlayer]:
@@ -208,16 +235,20 @@ class Trainer:
         # return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
                          # Trainer.caira_bias)
                 # for _ in range(self.population_size)]
-        return [
+        ais = [
             AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
-                     np.random.rand(self.group_size * 9)) for _ in range(self.population_size)]
+                     np.random.rand(self.group_size * 9)) for _ in range(self.population_size)] # todo: create incremented names
+        for ai in ais:
+            self.ai_histories[ai] = dict()
+            self.ai_histories[ai][0] = AiLogEntry(None, ["INITialization"])
+        return ais
 
     def train(self) -> AiPlayer:
         """trains the AIs due to the parameters and returns the final and best AI"""
         population = self._build_initial_population()
-        population = self._rank(population)
+        population = self._rank(population, 0)              # todo generation 0 two times -> only one time
         for generation in range(self.num_generations):
-            new_population = self._compute_next_generation(population)
+            new_population = self._compute_next_generation(population, generation)
             _, max_points = self._find_strongest_ai(new_population)
             new_avg_points = self._find_avg_points(new_population)
             avg_points = new_avg_points

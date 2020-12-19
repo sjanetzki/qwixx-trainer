@@ -15,6 +15,9 @@ class AiPlayer(Player):
         self.linear_factor = linear_factor
         self.bias = bias
 
+    def __repr__(self):
+        return "AI(" + self.name + ")"
+
     def _get_sum_situation_(self, hypothetical_situation) -> float:
         """evaluates the quality of a hypothetical situation that will be the situation after this turn"""
         situation_quality = 0
