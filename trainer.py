@@ -64,9 +64,37 @@ class Trainer:
         return extreme_ais
 
     def _compute_avg_points_per_ai(self, point_sum_per_ai, game_count):
+        """creates a dictionary with average points of every AI"""
         self.points_per_ai = dict()
         for ai, points in point_sum_per_ai.items():
             self.points_per_ai[ai] = int(points / game_count)
+
+    def _play_in_groups(self, population, point_sum_per_ai):
+        """part of _rank(); lets AIs play in groups"""
+        groups = self._group(population)
+        for group in groups:
+            game = Game(group)
+            game.play()
+            for ai in group:
+                point_sum_per_ai[ai] += ai.get_points()
+
+    def _split_ais_by_fitness(self, point_sum_per_ai):
+        """part of _rank(); splits AIs by fitness after playing in groups"""
+        point_sum_per_ai_temp = copy(point_sum_per_ai)
+        strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
+                                                 True)  # side-effect intentional
+        weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors, False)
+        middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
+        return strongest_ais, weakest_ais, middle_field
+
+    def _create_ranking(self, point_sum_per_ai):
+        """part of _rank(); creates a ranking based on the fitness of an AI"""
+        strongest_ais, weakest_ais, middle_field = self._split_ais_by_fitness(point_sum_per_ai)
+        ranking = copy(strongest_ais)
+        ranking.extend(middle_field)
+        ranking.extend(weakest_ais)
+        assert (len(ranking) == self.population_size)
+        return ranking, strongest_ais
 
     def _rank(self, population) -> List[AiPlayer]:  # todo split function at comments
         """lets the groups play and ranks them inside these groups by performance"""
@@ -78,36 +106,18 @@ class Trainer:
 
         game_count = 0
         while game_count < self.fitness_game_limit:
-            # play in groups
-            groups = self._group(population)
-            for group in groups:
-                game = Game(group)
-                game.play()
-                for ai in group:
-                    point_sum_per_ai[ai] += ai.get_points()
-
-            # split AIs by fitness
-            point_sum_per_ai_temp = copy(point_sum_per_ai)
-            strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
-                                                     True)  # side-effect intentional
-            weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors,
-                                                   False)
-            middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
-
-            # create ranking
-            ranking = copy(strongest_ais)
-            ranking.extend(middle_field)
-            ranking.extend(weakest_ais)
-            assert(len(ranking) == self.population_size)
-
-            # check if strongest AIs are the same as in the last iteration
+            self._play_in_groups(population, point_sum_per_ai)
+            ranking, strongest_ais = self._create_ranking(point_sum_per_ai)
             strongest_ais = set(strongest_ais)
-            if last_strongest_ais == strongest_ais:
+
+            # compares strongest ai in this round with strongest ai from round before
+            if last_strongest_ais == strongest_ais:     # todo xmas -> extra function?
                 self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
-                for ai in strongest_ais:
-                    print("best avg points: {}".format(self.points_per_ai[ai]))
+                # for ai in strongest_ais:
+                    # print("best avg points: {}".format(self.points_per_ai[ai]))
                 return ranking
             last_strongest_ais = strongest_ais
+
             game_count += 1
         self._compute_avg_points_per_ai(point_sum_per_ai, game_count)
         return ranking

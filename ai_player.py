@@ -5,7 +5,7 @@ from time import sleep
 import math
 
 
-class AiPlayer(Player):     # todo add type annotations
+class AiPlayer(Player):
     """an AI Player that decides on its own which crosses to make by evaluation;
     individual is characterized by its strategy"""
 
