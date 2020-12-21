@@ -155,7 +155,8 @@ class Trainer:
             parent2.linear_factor))
         self._add_event_to_ai_history(parent1, generation, "PAREnt")
         self._add_event_to_ai_history(parent2, generation, "PAREnt")
-        return AiPlayer("", self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
+        ai_number = len(self.ai_histories)
+        return AiPlayer(str(ai_number), self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
 
     def _add_event_to_ai_history(self, ai, generation, event):
         if generation in self.ai_histories[ai]:
@@ -200,12 +201,14 @@ class Trainer:
     def _add_random_ais(self, population, generation) -> List[AiPlayer]:
         """adds random AIs to the population in order to reach the original population size"""
         missing_ais = self.population_size - len(population)
-        ais = [AiPlayer("", self.group_size - 1, self._build_random_strategy(), self._build_random_strategy(),
-                        self._build_random_strategy())
-               for _ in range(missing_ais)]
-        for ai in ais:
+        ais = []
+        for ai_number in range(len(self.ai_histories), len(self.ai_histories) + missing_ais):
+            ai = AiPlayer(str(ai_number), self.group_size - 1, self._build_random_strategy(), self._build_random_strategy(),
+                          self._build_random_strategy())
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, generation, "INITialization")
+            ais.append(ai)
+
         population.extend(ais)
         return population
 
@@ -235,19 +238,6 @@ class Trainer:
         population = self._rank(population, generation)
         return population
 
-    def _build_initial_population(self) -> List[AiPlayer]:
-        """builds the initial population as a list of AIs with random strategies"""
-        # return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
-                         # Trainer.caira_bias)
-        # for _ in range(self.population_size)]
-        ais = [AiPlayer("", self.group_size - 1, self._build_random_strategy(), self._build_random_strategy(),
-                        self._build_random_strategy())
-               for _ in range(self.population_size)]  # todo: create incremented names
-        for ai in ais:
-            self.ai_histories[ai] = dict()
-            self._add_event_to_ai_history(ai, 0, "INITialization")
-        return ais
-
     def _build_random_strategy(self):
         """builds any part of strategy (quadratic, linear, bias)"""
         width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
@@ -255,7 +245,7 @@ class Trainer:
 
     def train(self) -> AiPlayer:
         """trains the AIs due to the parameters and returns the final and best AI"""
-        population = self._build_initial_population()
+        population = self._add_random_ais([], 0)
         population = self._rank(population, 0)              # todo generation 0 two times -> only one time
         for generation in range(self.num_generations):
             new_population = self._compute_next_generation(population, generation)
