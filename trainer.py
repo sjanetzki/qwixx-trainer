@@ -4,7 +4,7 @@ from game import Game
 import numpy as np
 from numpy import random
 import random
-from typing import List, Tuple
+from typing import List
 import pickle
 from copy import copy
 
@@ -34,8 +34,11 @@ class Trainer:
     # caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
     # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def __init__(self, group_size=5, population_size=20, survivor_rate=0.80, child_rate=0.25, mutation_rate=0.005,
-                 num_generations=10):
+    strategy_parameter_min = -10
+    strategy_parameter_max = 10
+
+    def __init__(self, group_size=2, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.00,
+                 num_generations=200):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -145,7 +148,7 @@ class Trainer:
                 self.ai_histories[ai][generation] = AiLogEntry(None, ["SELEction"])
         return population_ranked[: self.num_survivors]
 
-    def _mix_strategies(self, parent1, parent2) -> AiPlayer:
+    def _mix_strategies(self, parent1, parent2, generation) -> AiPlayer:
         """mixes the strategies of the parents by creating averages of the different factors / bias to be their child's
          strategy"""
         child_quadratic_factor = np.array([x / 2 for x in (parent1.quadratic_factor + parent2.quadratic_factor)])
@@ -153,13 +156,22 @@ class Trainer:
         child_bias = np.array([x / 2 for x in (parent1.bias + parent2.bias)])
         assert (len(child_linear_factor) == len(parent1.linear_factor) and len(child_linear_factor) == len(
             parent2.linear_factor))
+
+        if generation in self.ai_histories[parent1]:
+            self.ai_histories[parent1][generation].events.append("PAREnt")
+        else:
+            self.ai_histories[parent1][generation] = AiLogEntry(None, ["PAREnt"])
+        if generation in self.ai_histories[parent2]:
+            self.ai_histories[parent2][generation].events.append("PAREnt")
+        else:
+            self.ai_histories[parent2][generation] = AiLogEntry(None, ["PAREnt"])
         return AiPlayer("", self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
 
     def _recombine(self, population, generation) -> List[AiPlayer]:
         """extends the population by children that are created by recombination of their parents strategies"""
         children = []
         for child_index in range(self.num_children):  # build pairs
-            child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1])
+            child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1], generation)
             children.append(child)
             self.ai_histories[child] = dict()
             self.ai_histories[child][generation] = AiLogEntry(None, ["RECOmbination"])
@@ -195,9 +207,9 @@ class Trainer:
     def _add_random_ais(self, population, generation) -> List[AiPlayer]:
         """adds random AIs to the population in order to reach the original population size"""
         missing_ais = self.population_size - len(population)
-        ais = [
-            AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
-                     np.random.rand(self.group_size * 9)) for _ in range(missing_ais)]
+        ais = [AiPlayer("", self.group_size - 1, self._build_random_strategy(), self._build_random_strategy(),
+                        self._build_random_strategy())
+               for _ in range(missing_ais)]
         for ai in ais:
             self.ai_histories[ai] = dict()
             self.ai_histories[ai][generation] = AiLogEntry(None, ["INITialization"])
@@ -234,14 +246,19 @@ class Trainer:
         """builds the initial population as a list of AIs with random strategies"""
         # return [AiPlayer("", self.group_size - 1, Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
                          # Trainer.caira_bias)
-                # for _ in range(self.population_size)]
-        ais = [
-            AiPlayer("", self.group_size - 1, np.random.rand(self.group_size * 9), np.random.rand(self.group_size * 9),
-                     np.random.rand(self.group_size * 9)) for _ in range(self.population_size)] # todo: create incremented names
+        # for _ in range(self.population_size)]
+        ais = [AiPlayer("", self.group_size - 1, self._build_random_strategy(), self._build_random_strategy(),
+                        self._build_random_strategy())
+               for _ in range(self.population_size)]  # todo: create incremented names
         for ai in ais:
             self.ai_histories[ai] = dict()
             self.ai_histories[ai][0] = AiLogEntry(None, ["INITialization"])
         return ais
+
+    def _build_random_strategy(self):
+        """builds any part of strategy (quadratic, linear, bias)"""
+        width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
+        return (np.random.rand(self.group_size * 9)) * width + Trainer.strategy_parameter_min
 
     def train(self) -> AiPlayer:
         """trains the AIs due to the parameters and returns the final and best AI"""
