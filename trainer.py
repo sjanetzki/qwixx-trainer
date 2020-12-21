@@ -37,7 +37,7 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=2, population_size=100, survivor_rate=0.95, child_rate=0.5, mutation_rate=0.00,
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=0.5, mutation_rate=0.01,
                  num_generations=200):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
@@ -102,12 +102,13 @@ class Trainer:
         strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
                                                  True)  # side-effect intentional
         weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors, False)
+        weakest_ais = reversed(weakest_ais)
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
-        return strongest_ais, weakest_ais, middle_field
+        return strongest_ais, middle_field, weakest_ais           # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(weakest_ais)]
 
     def _create_ranking(self, point_sum_per_ai):
         """part of _rank(); creates a ranking based on the fitness of an AI"""
-        strongest_ais, weakest_ais, middle_field = self._split_ais_by_fitness(point_sum_per_ai)
+        strongest_ais, middle_field, weakest_ais = self._split_ais_by_fitness(point_sum_per_ai)
         ranking = copy(strongest_ais)
         ranking.extend(middle_field)
         ranking.extend(weakest_ais)
