@@ -142,10 +142,7 @@ class Trainer:
         """selects the best AIs, these survive -> rate of survivors given by parameter"""
         dead_ais = population_ranked[self.num_survivors:]
         for ai in dead_ais:
-            if generation in self.ai_histories[ai]:
-                self.ai_histories[ai][generation].events.append("SELEction")
-            else:
-                self.ai_histories[ai][generation] = AiLogEntry(None, ["SELEction"])
+            self._add_event_to_ai_history(ai, generation, "SELEction")
         return population_ranked[: self.num_survivors]
 
     def _mix_strategies(self, parent1, parent2, generation) -> AiPlayer:
@@ -156,16 +153,15 @@ class Trainer:
         child_bias = np.array([x / 2 for x in (parent1.bias + parent2.bias)])
         assert (len(child_linear_factor) == len(parent1.linear_factor) and len(child_linear_factor) == len(
             parent2.linear_factor))
-
-        if generation in self.ai_histories[parent1]:
-            self.ai_histories[parent1][generation].events.append("PAREnt")
-        else:
-            self.ai_histories[parent1][generation] = AiLogEntry(None, ["PAREnt"])
-        if generation in self.ai_histories[parent2]:
-            self.ai_histories[parent2][generation].events.append("PAREnt")
-        else:
-            self.ai_histories[parent2][generation] = AiLogEntry(None, ["PAREnt"])
+        self._add_event_to_ai_history(parent1, generation, "PAREnt")
+        self._add_event_to_ai_history(parent2, generation, "PAREnt")
         return AiPlayer("", self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
+
+    def _add_event_to_ai_history(self, ai, generation, event):
+        if generation in self.ai_histories[ai]:
+            self.ai_histories[ai][generation].events.append(event)
+        else:
+            self.ai_histories[ai][generation] = AiLogEntry(None, [event])
 
     def _recombine(self, population, generation) -> List[AiPlayer]:
         """extends the population by children that are created by recombination of their parents strategies"""
@@ -174,7 +170,7 @@ class Trainer:
             child = self._mix_strategies(population[child_index * 2], population[child_index * 2 + 1], generation)
             children.append(child)
             self.ai_histories[child] = dict()
-            self.ai_histories[child][generation] = AiLogEntry(None, ["RECOmbination"])
+            self._add_event_to_ai_history(child, generation, "RECOmbination")
         population.extend(children)
         return population
 
@@ -198,10 +194,7 @@ class Trainer:
         for ai in population:
             mutation_counter = self._mutate_strategy(ai)
             if mutation_counter > 0:
-                if generation in self.ai_histories[ai]:
-                    self.ai_histories[ai][generation].events.append("MUTAtion, {}".format(mutation_counter))
-                else:
-                    self.ai_histories[ai][generation] = AiLogEntry(None, ["MUTAtion, {}".format(mutation_counter)])
+                self._add_event_to_ai_history(ai, generation, "MUTAtion, {}".format(mutation_counter))
         return population               # was mutated by reference
 
     def _add_random_ais(self, population, generation) -> List[AiPlayer]:
@@ -212,7 +205,7 @@ class Trainer:
                for _ in range(missing_ais)]
         for ai in ais:
             self.ai_histories[ai] = dict()
-            self.ai_histories[ai][generation] = AiLogEntry(None, ["INITialization"])
+            self._add_event_to_ai_history(ai, generation, "INITialization")
         population.extend(ais)
         return population
 
@@ -252,7 +245,7 @@ class Trainer:
                for _ in range(self.population_size)]  # todo: create incremented names
         for ai in ais:
             self.ai_histories[ai] = dict()
-            self.ai_histories[ai][0] = AiLogEntry(None, ["INITialization"])
+            self._add_event_to_ai_history(ai, 0, "INITialization")
         return ais
 
     def _build_random_strategy(self):
