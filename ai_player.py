@@ -9,8 +9,8 @@ class AiPlayer(Player):
     """an AI Player that decides on its own which crosses to make by evaluation;
     individual is characterized by its strategy"""
 
-    def __init__(self, name, opponents, quadratic_factor, linear_factor, bias, ui=None):
-        super().__init__(name, opponents, ui)
+    def __init__(self, name, quadratic_factor, linear_factor, bias, ui=None):
+        super().__init__(name, ui)
         self.quadratic_factor = quadratic_factor
         self.linear_factor = linear_factor
         self.bias = bias

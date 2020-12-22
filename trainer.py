@@ -37,7 +37,7 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=0.5, mutation_rate=0.01,
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1.00, mutation_rate=0.01,
                  num_generations=200):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
@@ -102,7 +102,7 @@ class Trainer:
         strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
                                                  True)  # side-effect intentional
         weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors, False)
-        weakest_ais = reversed(weakest_ais)
+        weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
         return strongest_ais, middle_field, weakest_ais           # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(weakest_ais)]
 
@@ -157,7 +157,7 @@ class Trainer:
         self._add_event_to_ai_history(parent1, generation, "PAREnt")
         self._add_event_to_ai_history(parent2, generation, "PAREnt")
         ai_number = len(self.ai_histories)
-        return AiPlayer(str(ai_number), self.group_size - 1, child_quadratic_factor, child_linear_factor, child_bias)
+        return AiPlayer(str(ai_number), child_quadratic_factor, child_linear_factor, child_bias)
 
     def _add_event_to_ai_history(self, ai, generation, event):
         if generation in self.ai_histories[ai]:
@@ -204,7 +204,7 @@ class Trainer:
         missing_ais = self.population_size - len(population)
         ais = []
         for ai_number in range(len(self.ai_histories), len(self.ai_histories) + missing_ais):
-            ai = AiPlayer(str(ai_number), self.group_size - 1, self._build_random_strategy(), self._build_random_strategy(),
+            ai = AiPlayer(str(ai_number), self._build_random_strategy(), self._build_random_strategy(),
                           self._build_random_strategy())
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, generation, "INITialization")
@@ -242,7 +242,7 @@ class Trainer:
     def _build_random_strategy(self):
         """builds any part of strategy (quadratic, linear, bias)"""
         width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
-        return (np.random.rand(self.group_size * 9)) * width + Trainer.strategy_parameter_min
+        return (np.random.rand(AiPlayer.strategy_length)) * width + Trainer.strategy_parameter_min
 
     def train(self) -> AiPlayer:
         """trains the AIs due to the parameters and returns the final and best AI"""

@@ -227,6 +227,6 @@ if __name__ == "__main__":
                  # AiPlayer("meeep", 1, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
 
     # game = Game([HumanPlayer("meep", 1, ui), ai_opponent])
-    game = Game([AiPlayer("", 1, caira_quadratic_factor, caira_linear_factor, caira_bias, ui),
-                 AiPlayer("", 1, caira_quadratic_factor, caira_linear_factor, caira_bias)])
+    game = Game([AiPlayer("", caira_quadratic_factor, caira_linear_factor, caira_bias, ui),
+                 AiPlayer("", caira_quadratic_factor, caira_linear_factor, caira_bias)])
     game.play(True)
