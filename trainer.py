@@ -11,12 +11,13 @@ from copy import copy, deepcopy
 
 class AiLogEntry:
     """data to track evolution of AIs across generations during training"""
-    def __init__(self, points, events):
-        self.points = points
+    def __init__(self, points_average, points_variance, events):
+        self.points_average = points_average
+        self.points_variance = points_variance
         self.events = events
 
     def __repr__(self):
-        return "(" + str(self.points) + ", " + str(self.events) + ")"
+        return "(" + str(self.points_average) + ", " + str(self.points_variance) + ", " + str(self.events) + ")"
 
 
 class Trainer:
@@ -47,7 +48,7 @@ class Trainer:
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_limit = 10   # empiric value
+        self.fitness_game_limit = 10   # empiric value todo: test influence on variance
         self.points_per_ai = None
         self.ai_histories = dict()
 
@@ -78,24 +79,35 @@ class Trainer:
         assert(None not in extreme_ais)
         return extreme_ais
 
-    def _compute_avg_points_per_ai(self, point_sum_per_ai, game_count, generation):
+    def _compute_avg_points_per_ai(self, point_sum_per_ai, point_list_per_ai, game_count, generation):
         """creates a dictionary with average points of every AI"""
         self.points_per_ai = dict()
         for ai, points in point_sum_per_ai.items():
             self.points_per_ai[ai] = int(points / game_count)
+            points_variance = Trainer._compute_variance(point_list_per_ai, self.points_per_ai[ai])
             if generation in self.ai_histories[ai]:
-                self.ai_histories[ai][generation].points = self.points_per_ai[ai]
+                self.ai_histories[ai][generation].points_average = self.points_per_ai[ai]
+                self.ai_histories[ai][generation].points_variance = points_variance
             else:
-                self.ai_histories[ai][generation] = AiLogEntry(self.points_per_ai[ai], [])
+                self.ai_histories[ai][generation] = AiLogEntry(self.points_per_ai[ai], points_variance, [])
 
-    def _play_in_groups(self, population, point_sum_per_ai):
+    @staticmethod
+    def _compute_variance(numbers, average):
+        variance = 0
+        for number in numbers:
+            variance += (number - average) ** 2
+        return variance // len(numbers)
+
+    def _play_in_groups(self, population, point_sum_per_ai, point_list_per_ai):
         """part of _rank(); lets AIs play in groups"""
         groups = self._group(population)
         for group in groups:
             game = Game(group)
             game.play()
             for ai in group:
-                point_sum_per_ai[ai] += ai.get_points()
+                points = ai.get_points()
+                point_sum_per_ai[ai] += points
+                point_list_per_ai.append(points)
 
     def _split_ais_by_fitness(self, point_sum_per_ai):
         """part of _rank(); splits AIs by fitness after playing in groups"""
@@ -119,14 +131,16 @@ class Trainer:
     def _rank(self, population, generation) -> List[AiPlayer]:
         """lets the groups play and ranks them inside these groups by performance"""
         point_sum_per_ai = dict()
+        point_list_per_ai = dict()
         last_strongest_ais = None
         ranking = None
         for ai in population:
             point_sum_per_ai[ai] = 0
+            point_list_per_ai = []
 
         game_count = 0
         while game_count < self.fitness_game_limit:
-            self._play_in_groups(population, point_sum_per_ai)
+            self._play_in_groups(population, point_sum_per_ai, point_list_per_ai)
             game_count += 1
             ranking, strongest_ais = self._create_ranking(point_sum_per_ai)
             strongest_ais = set(strongest_ais)
@@ -137,7 +151,7 @@ class Trainer:
 
             last_strongest_ais = strongest_ais
 
-        self._compute_avg_points_per_ai(point_sum_per_ai, game_count, generation)
+        self._compute_avg_points_per_ai(point_sum_per_ai, point_list_per_ai, game_count, generation)
         return ranking
 
     def _select(self, population_ranked, generation) -> List[AiPlayer]:
@@ -164,7 +178,7 @@ class Trainer:
         if generation in self.ai_histories[ai]:
             self.ai_histories[ai][generation].events.append(event)
         else:
-            self.ai_histories[ai][generation] = AiLogEntry(None, [event])
+            self.ai_histories[ai][generation] = AiLogEntry(None, None, [event])
 
     def _recombine(self, population, generation) -> List[AiPlayer]:
         """extends the population by children that are created by recombination of their parents strategies"""
@@ -235,12 +249,15 @@ class Trainer:
                 strongest_ai = ai
         return strongest_ai, max_points
 
-    def _find_avg_points(self, population):
+    def _compute_points_statistics(self, population):
         """calculates the average points that were scored in a generation"""
         sum_points = 0
         for ai in population:
             sum_points += self.points_per_ai[ai]
-        return int(sum_points / self.population_size)
+        avg_points = int(sum_points / self.population_size)
+
+        var_points = Trainer._compute_variance(self.points_per_ai.values(), avg_points)
+        return avg_points, var_points
 
     def _compute_next_generation(self, population, generation) -> List[AiPlayer]:
         """directs all steps that have to be done to create the next generation / a (partly) new population"""
@@ -267,12 +284,10 @@ class Trainer:
 
         stop_generation = self.num_generations + start_generation
         for generation in range(start_generation, stop_generation):
-            new_population = self._compute_next_generation(population, generation)
-            _, max_points = self._find_strongest_ai(new_population)
-            new_avg_points = self._find_avg_points(new_population)
-            avg_points = new_avg_points
-            population = new_population
-            print("Generation: {} \t Max: {} \t Avg: {}".format(generation, max_points, avg_points))
+            population = self._compute_next_generation(population, generation)
+            _, max_points = self._find_strongest_ai(population)
+            avg_points, variance = self._compute_points_statistics(population)
+            print("Generation: {} \t Max: {} \t Avg: {} \t Var: {}".format(generation, max_points, avg_points, variance))
         print("evolution finished")
         # best_ai, _ = self._find_strongest_ai(population)
         self._save_final_population(population, stop_generation)
@@ -291,4 +306,4 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(True)
+    trainer.train(False)
