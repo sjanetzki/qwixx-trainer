@@ -1,4 +1,6 @@
 """This file creates the 'brain' of an AI-player -> place of decision process what to do in the next turn"""
+import numpy as np
+
 from player import CrossPossibility, Player
 from typing import List
 from time import sleep
@@ -8,6 +10,8 @@ import math
 class AiPlayer(Player):
     """an AI Player that decides on its own which crosses to make by evaluation;
     individual is characterized by its strategy"""
+
+    strategy_length = 4  # number x; limit r/y; limit g/b; penalty
 
     def __init__(self, name, quadratic_factor, linear_factor, bias, ui=None):
         super().__init__(name, ui)
@@ -21,12 +25,32 @@ class AiPlayer(Player):
     def _get_sum_situation_(self, hypothetical_situation) -> float:
         """evaluates the quality of a hypothetical situation that will be the situation after this turn"""
         situation_quality = 0
-        assert(len(hypothetical_situation) == len(self.quadratic_factor) == len(self.linear_factor) == len(self.bias))
+        assert (len(self.quadratic_factor) == len(self.linear_factor) == len(self.bias) == AiPlayer.strategy_length
+                and len(hypothetical_situation) == Player.situation_length)
+        quadratic_factor_extended = self._extend_strategy_length(self.quadratic_factor)
+        linear_factor_extended = self._extend_strategy_length(self.linear_factor)
+        bias_extended = self._extend_strategy_length(self.bias)
+
         for index in range(len(hypothetical_situation)):
-            situation_quality += math.pow(hypothetical_situation[index], 2) * self.quadratic_factor[index]
-            situation_quality += hypothetical_situation[index] * self.linear_factor[index]
-            situation_quality += self.bias[index]
+            situation_quality += math.pow(hypothetical_situation[index], 2) * quadratic_factor_extended[index]
+            situation_quality += hypothetical_situation[index] * linear_factor_extended[index]
+            situation_quality += bias_extended[index]
         return situation_quality
+
+    @staticmethod
+    def _extend_strategy_length(strategy_part):
+        assert (Player.situation_length == 9 and len(strategy_part) == 4)
+        strategy_part_extended = np.zeros((Player.situation_length,))
+        strategy_part_extended[0] = strategy_part[0]
+        strategy_part_extended[1] = strategy_part[1]
+        strategy_part_extended[2] = strategy_part[0]
+        strategy_part_extended[3] = strategy_part[1]
+        strategy_part_extended[4] = strategy_part[0]
+        strategy_part_extended[5] = strategy_part[2]
+        strategy_part_extended[6] = strategy_part[0]
+        strategy_part_extended[7] = strategy_part[2]
+        strategy_part_extended[8] = strategy_part[3]
+        return strategy_part_extended
 
     def _find_best_turns(self, possibilities, completed_lines, is_active_player) -> List[CrossPossibility]:
         """finds the turn(s) with the highest strength due to the evaluation of _get_sum_situation"""

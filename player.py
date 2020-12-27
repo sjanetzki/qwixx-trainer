@@ -24,8 +24,8 @@ class CrossPossibility(object):
 
 class Player(ABC):
     """makes all decision for doing crosses and informs the player about the state of the boards"""
-    strategy_length = 9
-    penalty_position = strategy_length - 1
+    situation_length = 9
+    penalty_position = situation_length - 1
 
     def __init__(self, name, ui=None):        # !!! remember to reset all variables update start_new_game !!!
         self.name = name
@@ -94,13 +94,13 @@ class Player(ABC):
 
     def _get_hypothetical_situation_after_turns(self, completed_lines, is_active_player, turns):
         """creates an numpy array (situation) that describes all boards after turns"""
-        situation = np.zeros((Player.strategy_length,))         # version for longer situation in git history
+        situation = np.zeros((Player.situation_length,))         # version for longer situation in git history
         board = deepcopy(self.board)
         for turn in turns:  # todo split -> with/without turns
             if turn is not None:
                 assert (is_active_player is not None)
                 board.cross(turn, completed_lines, is_active_player)
-        for parameter_type in range(Player.strategy_length):
+        for parameter_type in range(Player.situation_length):
             if parameter_type % 2 == 0 and parameter_type != Player.penalty_position:
                 situation_value = board.row_numbers[parameter_type // 2]
             elif parameter_type != Player.penalty_position:
@@ -113,7 +113,7 @@ class Player(ABC):
     def get_points(self):
         """calculates current points of a player"""
         situation = self._get_current_situation()
-        player_count = int(len(situation) / Player.strategy_length)
+        player_count = int(len(situation) / Player.situation_length)
         player_points = 0
         player_index = player_count - 1
 

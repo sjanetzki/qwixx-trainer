@@ -6,7 +6,7 @@ from numpy import random
 import random
 from typing import List
 import pickle
-from copy import copy
+from copy import copy, deepcopy
 
 
 class AiLogEntry:
@@ -37,8 +37,8 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1.00, mutation_rate=0.01,
-                 num_generations=200):
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=0.5, mutation_rate=0.01,
+                 num_generations=100):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -104,7 +104,7 @@ class Trainer:
         weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors, False)
         weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
-        return strongest_ais, middle_field, weakest_ais           # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(weakest_ais)]
+        return strongest_ais, middle_field, weakest_ais           # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(population)]
 
     def _create_ranking(self, point_sum_per_ai):
         """part of _rank(); creates a ranking based on the fitness of an AI"""
@@ -179,7 +179,7 @@ class Trainer:
     def _mutate_strategy(self, ai) -> int:
         """mutates randomly small parts of the strategy of an AI"""
         mutation_counter = 0
-        for value_index in range(len(ai.linear_factor)):
+        for value_index in range(AiPlayer.strategy_length):
             if random.random() < self.mutation_rate:
                 ai.quadratic_factor[value_index] = random.random()
                 mutation_counter += 1
@@ -193,11 +193,15 @@ class Trainer:
 
     def _mutate(self, population, generation) -> List[AiPlayer]:
         """creates a list of mutated AIs"""
+        copied_ais = []
         for ai in population:
+            ai_copy = deepcopy(ai)
             mutation_counter = self._mutate_strategy(ai)
             if mutation_counter > 0:
                 self._add_event_to_ai_history(ai, generation, "MUTAtion, {}".format(mutation_counter))
-        return population               # was mutated by reference
+                if len(population) + len(copied_ais) < self.population_size:
+                    copied_ais.append(ai_copy)
+        return population.extend(copied_ais)               # was mutated by reference
 
     def _add_random_ais(self, population, generation) -> List[AiPlayer]:
         """adds random AIs to the population in order to reach the original population size"""
@@ -244,11 +248,17 @@ class Trainer:
         width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
         return (np.random.rand(AiPlayer.strategy_length)) * width + Trainer.strategy_parameter_min
 
-    def train(self) -> AiPlayer:
+    def train(self, load_population_from_file) -> None:
         """trains the AIs due to the parameters and returns the final and best AI"""
-        population = self._add_random_ais([], 0)
-        population = self._rank(population, 0)              # todo generation 0 two times -> only one time
-        for generation in range(self.num_generations):
+        if load_population_from_file:
+            population, start_generation = self._load_population()
+        else:
+            start_generation = 0
+            population = self._add_random_ais([], start_generation)
+            population = self._rank(population, start_generation)              # todo generation 0 two times -> only one time
+
+        stop_generation = self.num_generations + start_generation
+        for generation in range(start_generation, stop_generation):
             new_population = self._compute_next_generation(population, generation)
             _, max_points = self._find_strongest_ai(new_population)
             new_avg_points = self._find_avg_points(new_population)
@@ -256,15 +266,21 @@ class Trainer:
             population = new_population
             print("Generation: {} \t Max: {} \t Avg: {}".format(generation, max_points, avg_points))
         print("evolution finished")
-        best_ai, _ = self._find_strongest_ai(population)
-        self._save_best_ai(best_ai)
-        return best_ai
+        # best_ai, _ = self._find_strongest_ai(population)
+        self._save_final_population(population, stop_generation)
 
-    def _save_best_ai(self, best_ai):
-        """saves the best AI of a train cycle """
-        pickle.dump(best_ai, open("best_ai.dat", "wb"))        # todo date in name
+    def _save_final_population(self, population, generation):
+        """saves the final population of a train cycle """
+        pickle.dump((population, self.ai_histories, generation), open("final_population.dat", "wb"))        # todo date in name
+
+    def _load_population(self):
+        """loads the population that was saved"""
+        file = open("final_population.dat", "rb")
+        population, self.ai_histories, generation = pickle.load(file)
+        file.close()
+        return population, generation
 
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train()
+    trainer.train(True)
