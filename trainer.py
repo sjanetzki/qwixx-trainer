@@ -37,11 +37,12 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=0.5, mutation_rate=0.01,
-                 num_generations=100):
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1, mutation_rate=0.01,
+                 mutation_copy_rate=0, num_generations=100):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
+        self.mutation_copy_rate = mutation_copy_rate
         self.num_generations = num_generations
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
@@ -104,7 +105,7 @@ class Trainer:
         weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors, False)
         weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
-        return strongest_ais, middle_field, weakest_ais           # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(population)]
+        return strongest_ais, middle_field, weakest_ais
 
     def _create_ranking(self, point_sum_per_ai):
         """part of _rank(); creates a ranking based on the fitness of an AI"""
@@ -194,14 +195,21 @@ class Trainer:
     def _mutate(self, population, generation) -> List[AiPlayer]:
         """creates a list of mutated AIs"""
         copied_ais = []
+        max_copies = (self.population_size - len(population)) * self.mutation_copy_rate
         for ai in population:
             ai_copy = deepcopy(ai)
+            ai_number = len(self.ai_histories)
+            ai_copy.name = str(ai_number)
+            ai_history_copy = deepcopy(self.ai_histories[ai])
             mutation_counter = self._mutate_strategy(ai)
             if mutation_counter > 0:
                 self._add_event_to_ai_history(ai, generation, "MUTAtion, {}".format(mutation_counter))
-                if len(population) + len(copied_ais) < self.population_size:
+                if len(copied_ais) < max_copies:
                     copied_ais.append(ai_copy)
-        return population.extend(copied_ais)               # was mutated by reference
+                    self.ai_histories[ai_copy] = ai_history_copy
+                    self._add_event_to_ai_history(ai_copy, generation, f"COPY from {ai}")
+        population.extend(copied_ais)
+        return population          # was mutated by reference
 
     def _add_random_ais(self, population, generation) -> List[AiPlayer]:
         """adds random AIs to the population in order to reach the original population size"""
@@ -241,7 +249,7 @@ class Trainer:
         population = self._mutate(population, generation)
         population = self._add_random_ais(population, generation)
         population = self._rank(population, generation)
-        return population
+        return population                    # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(population)]
 
     def _build_random_strategy(self):
         """builds any part of strategy (quadratic, linear, bias)"""
