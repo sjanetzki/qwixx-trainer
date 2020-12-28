@@ -3,7 +3,6 @@ import numpy as np
 
 from player import CrossPossibility, Player
 from typing import List
-from time import sleep
 import math
 
 
@@ -39,6 +38,7 @@ class AiPlayer(Player):
 
     @staticmethod
     def _extend_strategy_length(strategy_part):
+        """extends a part of the strategy to make it fit the dimensions of the situation"""
         assert (Player.situation_length == 9 and len(strategy_part) == 4)
         strategy_part_extended = np.zeros((Player.situation_length,))
         strategy_part_extended[0] = strategy_part[0]

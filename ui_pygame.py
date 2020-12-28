@@ -111,7 +111,7 @@ class PyGameUi(object):
                               PyGameUi.box_y_length], 0)  # box behind the buttons
             for eyes in range(0, 11):
                 self.button(eyes, PyGameUi.button_length, PyGameUi.button_length, inactive_color, active_color)
-                text = font.render("{}".format(int(eyes + 2)), True, PyGameUi.white)
+                text = font.render(f"{int(eyes + 2)}", True, PyGameUi.white)
                 if row < 2:
                     self.screen.blit(text, [PyGameUi.button_length + PyGameUi.button_x_distance * eyes,
                                             PyGameUi.box_y_distance * row + PyGameUi.button_text_y])
@@ -150,7 +150,7 @@ class PyGameUi(object):
     def _render_dice(self, font) -> None:
         """renders the dice onto the board"""
         for dice in range(len(self.lst_eyes)):
-            text = font.render("{}".format(self.lst_eyes[dice]), True, self.convert_number_to_color(dice, True))
+            text = font.render(f"{self.lst_eyes[dice]}", True, self.convert_number_to_color(dice, True))
             self.screen.blit(text,
                              [PyGameUi.button_length + PyGameUi.button_x_distance * dice,
                               PyGameUi.penalty_box_y + PyGameUi.penalty_text_y_offset])
@@ -187,7 +187,7 @@ class PyGameUi(object):
             player_mode = "active player"
         else:
             player_mode = "passive player"
-        text = font.render("{}".format(player_mode), True, PyGameUi.dark_grey)
+        text = font.render(f"{player_mode}", True, PyGameUi.dark_grey)
         self.screen.blit(text, [PyGameUi.box_x + PyGameUi.player_mode_x_offset,
                                 PyGameUi.penalty_box_y + PyGameUi.player_mode_y_offset])
 

@@ -23,9 +23,9 @@ class AiLogEntry:
 class Trainer:
     """trains AIs (with a genetic algorithm) in order to get the best AI out of all;
     7 parameters therefore given manually"""
-   # bodo_quadratic_factor = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-   # bodo_linear_factor = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
-   # bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
+    # bodo_quadratic_factor = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # bodo_linear_factor = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
+    # bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
 
     # caira_quadratic_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0])
     # caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
@@ -38,8 +38,8 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1, mutation_rate=0.01,
-                 mutation_copy_rate=0, num_generations=100):
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1, mutation_rate=0.005,
+                 mutation_copy_rate=0, num_generations=1000):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -60,7 +60,8 @@ class Trainer:
             groups.append(population[ai_index: ai_index + self.group_size])
         return groups
 
-    def _select_extreme_ais(self, point_sum_per_ai, num_extreme_ais, selects_best_ais) -> List[AiPlayer]:
+    @staticmethod
+    def _select_extreme_ais(point_sum_per_ai, num_extreme_ais, selects_best_ais) -> List[AiPlayer]:
         """selects strongest or weakest AIs of a population"""
         extreme_ais = []
         for _ in range(num_extreme_ais):
@@ -79,7 +80,7 @@ class Trainer:
         assert(None not in extreme_ais)
         return extreme_ais
 
-    def _compute_avg_points_per_ai(self, point_sum_per_ai, point_list_per_ai, game_count, generation):
+    def _compute_avg_points_per_ai(self, point_sum_per_ai, point_list_per_ai, game_count, generation) -> None:
         """creates a dictionary with average points of every AI"""
         self.points_per_ai = dict()
         for ai, points in point_sum_per_ai.items():
@@ -92,13 +93,14 @@ class Trainer:
                 self.ai_histories[ai][generation] = AiLogEntry(self.points_per_ai[ai], points_variance, [])
 
     @staticmethod
-    def _compute_variance(numbers, average):
+    def _compute_variance(numbers, average) -> int:
+        """calculates the variance of any list of numbers with a given average"""
         variance = 0
         for number in numbers:
             variance += (number - average) ** 2
         return variance // len(numbers)
 
-    def _play_in_groups(self, population, point_sum_per_ai, point_list_per_ai):
+    def _play_in_groups(self, population, point_sum_per_ai, point_list_per_ai) -> None:
         """part of _rank(); lets AIs play in groups"""
         groups = self._group(population)
         for group in groups:
@@ -112,9 +114,10 @@ class Trainer:
     def _split_ais_by_fitness(self, point_sum_per_ai):
         """part of _rank(); splits AIs by fitness after playing in groups"""
         point_sum_per_ai_temp = copy(point_sum_per_ai)
-        strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
-                                                 True)  # side-effect intentional
-        weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors, False)
+        strongest_ais = Trainer._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
+                                                    True)  # side-effect intentional
+        weakest_ais = Trainer._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors,
+                                                  False)
         weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
         return strongest_ais, middle_field, weakest_ais
@@ -174,7 +177,7 @@ class Trainer:
         ai_number = len(self.ai_histories)
         return AiPlayer(str(ai_number), child_quadratic_factor, child_linear_factor, child_bias)
 
-    def _add_event_to_ai_history(self, ai, generation, event):
+    def _add_event_to_ai_history(self, ai, generation, event) -> None:
         if generation in self.ai_histories[ai]:
             self.ai_histories[ai][generation].events.append(event)
         else:
@@ -217,7 +220,7 @@ class Trainer:
             ai_history_copy = deepcopy(self.ai_histories[ai])
             mutation_counter = self._mutate_strategy(ai)
             if mutation_counter > 0:
-                self._add_event_to_ai_history(ai, generation, "MUTAtion, {}".format(mutation_counter))
+                self._add_event_to_ai_history(ai, generation, f"MUTAtion, {mutation_counter}")
                 if len(copied_ais) < max_copies:
                     copied_ais.append(ai_copy)
                     self.ai_histories[ai_copy] = ai_history_copy
@@ -230,8 +233,8 @@ class Trainer:
         missing_ais = self.population_size - len(population)
         ais = []
         for ai_number in range(len(self.ai_histories), len(self.ai_histories) + missing_ais):
-            ai = AiPlayer(str(ai_number), self._build_random_strategy(), self._build_random_strategy(),
-                          self._build_random_strategy())
+            ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(), Trainer._build_random_strategy(),
+                          Trainer._build_random_strategy())
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, generation, "INITialization")
             ais.append(ai)
@@ -268,7 +271,8 @@ class Trainer:
         population = self._rank(population, generation)
         return population                    # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(population)]
 
-    def _build_random_strategy(self):
+    @staticmethod
+    def _build_random_strategy():
         """builds any part of strategy (quadratic, linear, bias)"""
         width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
         return (np.random.rand(AiPlayer.strategy_length)) * width + Trainer.strategy_parameter_min
@@ -280,21 +284,21 @@ class Trainer:
         else:
             start_generation = 0
             population = self._add_random_ais([], start_generation)
-            population = self._rank(population, start_generation)              # todo generation 0 two times -> only one time
+            population = self._rank(population, start_generation)         # todo generation 0 two times -> only one time
 
         stop_generation = self.num_generations + start_generation
         for generation in range(start_generation, stop_generation):
             population = self._compute_next_generation(population, generation)
             _, max_points = self._find_strongest_ai(population)
             avg_points, variance = self._compute_points_statistics(population)
-            print("Generation: {} \t Max: {} \t Avg: {} \t Var: {}".format(generation, max_points, avg_points, variance))
+            print(f"Generation: {generation} \t Max: {max_points} \t Avg: {avg_points} \t Var: {variance}")
         print("evolution finished")
         # best_ai, _ = self._find_strongest_ai(population)
         self._save_final_population(population, stop_generation)
 
-    def _save_final_population(self, population, generation):
+    def _save_final_population(self, population, generation) -> None:
         """saves the final population of a train cycle """
-        pickle.dump((population, self.ai_histories, generation), open("final_population.dat", "wb"))        # todo date in name
+        pickle.dump((population, self.ai_histories, generation), open("final_population.dat", "wb"))  # todo date in name
 
     def _load_population(self):
         """loads the population that was saved"""

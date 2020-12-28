@@ -1,4 +1,4 @@
-"""This file creates the board of Qwixx, sets valid crosses and calculates the total points."""
+"""This file creates the board of Qwixx and sets valid crosses"""
 import numpy as np
 from enum import IntEnum
 
@@ -30,7 +30,7 @@ class Board:
                 row_limits[color] = min(crosses)
         return row_limits
 
-    def _set_row_limits(self, row, value):
+    def _set_row_limits(self, row, value) -> None:
         """adds a new row limit (new cross)"""
         self.crosses_by_color[row].add(value)
 
@@ -42,7 +42,7 @@ class Board:
             row_numbers[color] = len(crosses)
         return row_numbers
 
-    def cross(self, position, completed_lines, is_active_player):
+    def cross(self, position, completed_lines, is_active_player) -> None:
         """sets the crosses chosen by the player after checking their validity"""
         row = position.row
         eyes = position.eyes
@@ -57,7 +57,7 @@ class Board:
                 return
         self._make_colored_cross(eyes, row, completed_lines)
 
-    def _make_colored_cross(self, eyes, row, completed_lines):
+    def _make_colored_cross(self, eyes, row, completed_lines) -> None:
         """make cross in a colored row"""
         assert (eyes in range(2, 13))
         if completed_lines[row]:

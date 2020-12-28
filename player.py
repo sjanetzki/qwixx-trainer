@@ -129,4 +129,4 @@ class Player(ABC):
 
     def end(self, points) -> None:
         """prints the own points"""
-        print(self.name + "´s" + " points: {}".format(points))
+        print(self.name + f"´s points: {points}")

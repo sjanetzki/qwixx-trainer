@@ -222,10 +222,8 @@ if __name__ == "__main__":
     caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
     caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-
     # game = Game([HumanPlayer("meep", 1, ui),
                  # AiPlayer("meeep", 1, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
-
     # game = Game([HumanPlayer("meep", 1, ui), ai_opponent])
     game = Game([AiPlayer("", caira_quadratic_factor, caira_linear_factor, caira_bias, ui),
                  AiPlayer("", caira_quadratic_factor, caira_linear_factor, caira_bias)])
