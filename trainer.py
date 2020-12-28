@@ -23,23 +23,23 @@ class AiLogEntry:
 class Trainer:
     """trains AIs (with a genetic algorithm) in order to get the best AI out of all;
     7 parameters therefore given manually"""
-    # bodo_quadratic_factor = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-    # bodo_linear_factor = np.array([1, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
-    # bodo_bias = np.array([0, 0, 0, 0, 0, -6, 0, -6, 0])
+    # bodo_quadratic_factor = np.array([0.0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # bodo_linear_factor = np.array([1.0, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
+    # bodo_bias = np.array([0.0, 0, 0, 0, 0, -6, 0, -6, 0])
 
     # caira_quadratic_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0])
     # caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
-    # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # caira_bias = np.array([0.0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    # caira_quadratic_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0])
-    # caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
-    # caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # caira_quadratic_factor = np.array([0.5, 0, 0, 0])
+    # caira_linear_factor = np.array([0.5, 0, 0, -5])
+    # caira_bias = np.array([0.0, 0.0, 0.0, 0.0])         # 0.0 for float type (important for mutation)
 
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1, mutation_rate=0.005,
-                 mutation_copy_rate=0, num_generations=1000):
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1, mutation_rate=0.05,
+                 mutation_copy_rate=0, num_generations=100):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -48,7 +48,7 @@ class Trainer:
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_limit = 10   # empiric value todo: test influence on variance
+        self.fitness_game_limit = 10   # empiric value
         self.points_per_ai = None
         self.ai_histories = dict()
 
@@ -94,11 +94,11 @@ class Trainer:
 
     @staticmethod
     def _compute_variance(numbers, average) -> int:
-        """calculates the variance of any list of numbers with a given average"""
-        variance = 0
+        """calculates the corrected sample variance of any list of numbers with a given average"""
+        variance = 0                            # korrigierte Stichprobenvarianz
         for number in numbers:
             variance += (number - average) ** 2
-        return variance // len(numbers)
+        return int(variance / len(numbers))
 
     def _play_in_groups(self, population, point_sum_per_ai, point_list_per_ai) -> None:
         """part of _rank(); lets AIs play in groups"""
@@ -199,13 +199,13 @@ class Trainer:
         mutation_counter = 0
         for value_index in range(AiPlayer.strategy_length):
             if random.random() < self.mutation_rate:
-                ai.quadratic_factor[value_index] = random.random()
+                ai.quadratic_factor[value_index] = Trainer._adjust_strategy_range(random.random())
                 mutation_counter += 1
             if random.random() < self.mutation_rate:
-                ai.linear_factor[value_index] = random.random()
+                ai.linear_factor[value_index] = Trainer._adjust_strategy_range(random.random())
                 mutation_counter += 1
             if random.random() < self.mutation_rate:
-                ai.bias[value_index] = random.random()
+                ai.bias[value_index] = Trainer._adjust_strategy_range(random.random())
                 mutation_counter += 1
         return mutation_counter                 # call by reference on ai (pointer)
 
@@ -235,6 +235,8 @@ class Trainer:
         for ai_number in range(len(self.ai_histories), len(self.ai_histories) + missing_ais):
             ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(), Trainer._build_random_strategy(),
                           Trainer._build_random_strategy())
+            # ai = AiPlayer(str(ai_number), Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
+            # Trainer.caira_bias)
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, generation, "INITialization")
             ais.append(ai)
@@ -269,15 +271,19 @@ class Trainer:
         population = self._mutate(population, generation)
         population = self._add_random_ais(population, generation)
         population = self._rank(population, generation)
-        return population                    # [(index, self.ai_histories[ai]) for (index, ai) in enumerate(population)]
-
+        return population                    # &[(index, self.ai_histories[ai],ai) for (index, ai) in enumerate(population)]
+                                            # [(index, ai, list(reversed(list(self.ai_histories[ai].items())))) for (index, ai) in enumerate(population)]
     @staticmethod
     def _build_random_strategy():
         """builds any part of strategy (quadratic, linear, bias)"""
-        width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
-        return (np.random.rand(AiPlayer.strategy_length)) * width + Trainer.strategy_parameter_min
+        return Trainer._adjust_strategy_range(np.random.rand(AiPlayer.strategy_length))
 
-    def train(self, load_population_from_file) -> None:
+    @staticmethod
+    def _adjust_strategy_range(array_or_value):
+        width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
+        return array_or_value * width + Trainer.strategy_parameter_min
+
+    def train(self, load_population_from_file, save_population_in_file) -> None:
         """trains the AIs due to the parameters and returns the final and best AI"""
         if load_population_from_file:
             population, start_generation = self._load_population()
@@ -294,7 +300,8 @@ class Trainer:
             print(f"Generation: {generation} \t Max: {max_points} \t Avg: {avg_points} \t Var: {variance}")
         print("evolution finished")
         # best_ai, _ = self._find_strongest_ai(population)
-        self._save_final_population(population, stop_generation)
+        if save_population_in_file:
+            self._save_final_population(population, stop_generation)
 
     def _save_final_population(self, population, generation) -> None:
         """saves the final population of a train cycle """
@@ -310,4 +317,4 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(False)
+    trainer.train(load_population_from_file=False, save_population_in_file=False)

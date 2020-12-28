@@ -3,6 +3,7 @@ import numpy as np
 
 from player import CrossPossibility, Player
 from typing import List
+from copy import copy
 import math
 
 
@@ -14,9 +15,9 @@ class AiPlayer(Player):
 
     def __init__(self, name, quadratic_factor, linear_factor, bias, ui=None):
         super().__init__(name, ui)
-        self.quadratic_factor = quadratic_factor
-        self.linear_factor = linear_factor
-        self.bias = bias
+        self.quadratic_factor = copy(quadratic_factor)
+        self.linear_factor = copy(linear_factor)
+        self.bias = copy(bias)
 
     def __repr__(self):
         return "AI(" + self.name + ")"
