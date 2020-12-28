@@ -38,17 +38,18 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, population_size=100, survivor_rate=0.67, child_rate=1, mutation_rate=0.05,
-                 mutation_copy_rate=0, num_generations=100):
+    def __init__(self, group_size=5, population_size=100, survivor_rate=0.74, child_rate=1, mutation_rate=0.05,
+                 mutation_copy_rate=0, lowest_variance_rate=0.8, num_generations=100):
         self.group_size = group_size         # todo what if population_size not multiple of group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
         self.mutation_copy_rate = mutation_copy_rate
+        self.lowest_variance_rate = lowest_variance_rate
         self.num_generations = num_generations
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_limit = 10   # empiric value
+        self.fitness_game_number = 10   # empiric value
         self.points_per_ai = None
         self.ai_histories = dict()
 
@@ -60,8 +61,7 @@ class Trainer:
             groups.append(population[ai_index: ai_index + self.group_size])
         return groups
 
-    @staticmethod
-    def _select_extreme_ais(point_sum_per_ai, num_extreme_ais, selects_best_ais) -> List[AiPlayer]:
+    def _select_extreme_ais(self, point_sum_per_ai, num_extreme_ais, selects_best_ais, variance_threshold, generation) -> List[AiPlayer]:
         """selects strongest or weakest AIs of a population"""
         extreme_ais = []
         for _ in range(num_extreme_ais):
@@ -69,6 +69,8 @@ class Trainer:
             min_points = float("inf")
             extreme_ai = None
             for ai, points in point_sum_per_ai.items():
+                if self.ai_histories[ai][generation].points_variance > variance_threshold:
+                    continue    # ignore AIs with high points variance in ranking -> middle field (extreme good/bad daily form)
                 if selects_best_ais and max_points < points:
                     max_points = points
                     extreme_ai = ai
@@ -80,11 +82,11 @@ class Trainer:
         assert(None not in extreme_ais)
         return extreme_ais
 
-    def _compute_avg_points_per_ai(self, point_sum_per_ai, point_list_per_ai, game_count, generation) -> None:
+    def _compute_avg_points_per_ai(self, point_sum_per_ai, point_list_per_ai, generation) -> None:
         """creates a dictionary with average points of every AI"""
         self.points_per_ai = dict()
         for ai, points in point_sum_per_ai.items():
-            self.points_per_ai[ai] = int(points / game_count)
+            self.points_per_ai[ai] = int(points / self.fitness_game_number)
             points_variance = Trainer._compute_variance(point_list_per_ai, self.points_per_ai[ai])
             if generation in self.ai_histories[ai]:
                 self.ai_histories[ai][generation].points_average = self.points_per_ai[ai]
@@ -111,51 +113,42 @@ class Trainer:
                 point_sum_per_ai[ai] += points
                 point_list_per_ai.append(points)
 
-    def _split_ais_by_fitness(self, point_sum_per_ai):
+    def _split_ais_by_fitness(self, point_sum_per_ai, population, generation):
         """part of _rank(); splits AIs by fitness after playing in groups"""
+        variances = []
+        for ai in population:
+            variances.append(self.ai_histories[ai][generation].points_variance)
+        variance_threshold = list(sorted(variances))[int(self.lowest_variance_rate * self.population_size) - 1]
         point_sum_per_ai_temp = copy(point_sum_per_ai)
-        strongest_ais = Trainer._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
-                                                    True)  # side-effect intentional
-        weakest_ais = Trainer._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors,
-                                                  False)
+        strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
+                                                    True, variance_threshold, generation)  # side-effect intentional
+        weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors,
+                                                  False, variance_threshold, generation)
         weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
         return strongest_ais, middle_field, weakest_ais
 
-    def _create_ranking(self, point_sum_per_ai):
+    def _create_ranking(self, point_sum_per_ai, population, generation):
         """part of _rank(); creates a ranking based on the fitness of an AI"""
-        strongest_ais, middle_field, weakest_ais = self._split_ais_by_fitness(point_sum_per_ai)
+        strongest_ais, middle_field, weakest_ais = self._split_ais_by_fitness(point_sum_per_ai, population, generation)
         ranking = copy(strongest_ais)
         ranking.extend(middle_field)
         ranking.extend(weakest_ais)
         assert (len(ranking) == self.population_size)
-        return ranking, strongest_ais
+        return ranking
 
     def _rank(self, population, generation) -> List[AiPlayer]:
         """lets the groups play and ranks them inside these groups by performance"""
         point_sum_per_ai = dict()
         point_list_per_ai = dict()
-        last_strongest_ais = None
-        ranking = None
         for ai in population:
             point_sum_per_ai[ai] = 0
             point_list_per_ai = []
 
-        game_count = 0
-        while game_count < self.fitness_game_limit:
+        for game_count in range(self.fitness_game_number):
             self._play_in_groups(population, point_sum_per_ai, point_list_per_ai)
-            game_count += 1
-            ranking, strongest_ais = self._create_ranking(point_sum_per_ai)
-            strongest_ais = set(strongest_ais)
-
-            # check if strongest AIs are reliable
-            if last_strongest_ais == strongest_ais:
-                break
-
-            last_strongest_ais = strongest_ais
-
-        self._compute_avg_points_per_ai(point_sum_per_ai, point_list_per_ai, game_count, generation)
-        return ranking
+        self._compute_avg_points_per_ai(point_sum_per_ai, point_list_per_ai, generation)
+        return self._create_ranking(point_sum_per_ai, population, generation)
 
     def _select(self, population_ranked, generation) -> List[AiPlayer]:
         """selects the best AIs, these survive -> rate of survivors given by parameter"""
@@ -272,7 +265,7 @@ class Trainer:
         population = self._add_random_ais(population, generation)
         population = self._rank(population, generation)
         return population                    # &[(index, self.ai_histories[ai],ai) for (index, ai) in enumerate(population)]
-                                            # [(index, ai, list(reversed(list(self.ai_histories[ai].items())))) for (index, ai) in enumerate(population)]
+                    # [(index, ai, list(reversed(list(self.ai_histories[ai].items())))) for (index, ai) in enumerate(population)]
     @staticmethod
     def _build_random_strategy():
         """builds any part of strategy (quadratic, linear, bias)"""
