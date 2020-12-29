@@ -1,6 +1,6 @@
 """This file creates a trainer that finds the best (fittest) AI"""
 from ai_player import AiPlayer
-from game import Game
+from game import Game, SampleStrategies
 import numpy as np
 from numpy import random
 import random
@@ -23,24 +23,14 @@ class AiLogEntry:
 class Trainer:
     """trains AIs (with a genetic algorithm) in order to get the best AI out of all;
     7 parameters therefore given manually"""
-    # bodo_quadratic_factor = np.array([0.0, 0, 0, 0, 0, 0, 0, 0, 0])
-    # bodo_linear_factor = np.array([1.0, -0.5, 1, -0.5, 1, 0.5, 1, 0.5, -2.5])
-    # bodo_bias = np.array([0.0, 0, 0, 0, 0, -6, 0, -6, 0])
-
-    # caira_quadratic_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0])
-    # caira_linear_factor = np.array([0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, -5])
-    # caira_bias = np.array([0.0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-    # caira_quadratic_factor = np.array([0.5, 0, 0, 0])
-    # caira_linear_factor = np.array([0.5, 0, 0, -5])
-    # caira_bias = np.array([0.0, 0.0, 0.0, 0.0])         # 0.0 for float type (important for mutation)
 
     strategy_parameter_min = -10
-    strategy_parameter_max = 10         # todo add cubic factor + evaluate
+    strategy_parameter_max = 10
 
     def __init__(self, group_size=5, population_size=100, survivor_rate=0.74, child_rate=1, mutation_rate=0.05,
-                 mutation_copy_rate=0, lowest_variance_rate=0.8, num_generations=100):
-        self.group_size = group_size         # todo what if population_size not multiple of group_size
+                 mutation_copy_rate=0, lowest_variance_rate=0.95, num_generations=100):
+        assert (population_size % group_size == 0)
+        self.group_size = group_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
         self.mutation_copy_rate = mutation_copy_rate
@@ -49,7 +39,7 @@ class Trainer:
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_number = 10   # empiric value
+        self.fitness_game_number = 1   # empiric value
         self.points_per_ai = None
         self.ai_histories = dict()
         self.generation = 0
@@ -229,10 +219,10 @@ class Trainer:
         missing_ais = self.population_size - len(self.population)
         ais = []
         for ai_number in range(len(self.ai_histories), len(self.ai_histories) + missing_ais):
-            ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(), Trainer._build_random_strategy(),
-                          Trainer._build_random_strategy())
-            # ai = AiPlayer(str(ai_number), Trainer.caira_quadratic_factor, Trainer.caira_linear_factor,
-            # Trainer.caira_bias)
+            # ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(),
+                          # Trainer._build_random_strategy(), Trainer._build_random_strategy())
+            ai = AiPlayer(str(ai_number), SampleStrategies.bodo_quadratic_factor,
+                          SampleStrategies.bodo_linear_factor, SampleStrategies.bodo_bias)
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, "INITialization")
             ais.append(ai)
@@ -287,11 +277,11 @@ class Trainer:
             self._rank()         # todo generation 0 two times -> only one time
 
         stop_generation = self.num_generations + self.generation
-        for generation in range(self.generation, stop_generation):
+        while self.generation < stop_generation:
             self._compute_next_generation()
             _, max_points = self._find_strongest_ai()
             avg_points, variance = self._compute_points_statistics()
-            print(f"Generation: {generation} \t Max: {max_points} \t Avg: {avg_points} \t Var: {variance}")
+            print(f"Generation: {self.generation} \t Max: {max_points} \t Avg: {avg_points} \t Var: {variance}")
             self.generation += 1
         print("evolution finished")
         # best_ai, _ = self._find_strongest_ai(population)

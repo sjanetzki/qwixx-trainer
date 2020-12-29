@@ -1,10 +1,22 @@
 """This file creates the 'brain' of an AI-player -> place of decision process what to do in the next turn"""
+from time import sleep
+
 import numpy as np
 
 from player import CrossPossibility, Player
 from typing import List
 from copy import copy
 import math
+
+
+class SampleStrategies:
+    bodo_quadratic_factor = np.array([0.0, 0, 0, 0])
+    bodo_linear_factor = np.array([1.0, -0.5, 0.5, -2.5])
+    bodo_bias = np.array([0.0, 0, -6, 0])
+
+    caira_quadratic_factor = np.array([0.5, 0, 0, 0])
+    caira_linear_factor = np.array([0.5, 0, 0, -5])
+    caira_bias = np.array([0.0, 0.0, 0.0, 0.0])         # 0.0 for float type (important for mutation)
 
 
 class AiPlayer(Player):
@@ -68,7 +80,7 @@ class AiPlayer(Player):
     def cross_active(self, lst_eyes, valid_turns, completed_lines) -> List[CrossPossibility]:
         """crosses the best known active turn"""
         super().cross_active(lst_eyes, valid_turns, completed_lines)
-        # sleep(0.5)
+        # sleep(0.3)
         return self._find_best_turns(valid_turns, completed_lines, True)
 
     def cross_passive(self, lst_eyes, valid_turns, completed_lines):

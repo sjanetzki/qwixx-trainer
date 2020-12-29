@@ -3,11 +3,10 @@ from typing import List, Tuple
 
 from dice import Dice
 from board import Board, Row
-from ai_player import AiPlayer
+from ai_player import AiPlayer, SampleStrategies
 from human_player import HumanPlayer
 from player import CrossPossibility, Player
 from ui_pygame import PyGameUi
-import numpy as np
 import pickle
 
 
@@ -216,15 +215,15 @@ def load_best_ai():
 if __name__ == "__main__":
     ui = PyGameUi()
     ui.show_board()
-    ai_opponent = load_best_ai()
+    # ai_opponent = load_best_ai()
 
-    caira_quadratic_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0])
-    caira_linear_factor = np.array([0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0, -5])
-    caira_bias = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
 
     # game = Game([HumanPlayer("meep", 1, ui),
                  # AiPlayer("meeep", 1, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
-    # game = Game([HumanPlayer("meep", 1, ui), ai_opponent])
-    game = Game([AiPlayer("", caira_quadratic_factor, caira_linear_factor, caira_bias, ui),
-                 AiPlayer("", caira_quadratic_factor, caira_linear_factor, caira_bias)])
+
+    game = Game([AiPlayer("", SampleStrategies.bodo_quadratic_factor, SampleStrategies.bodo_linear_factor,
+                          SampleStrategies.bodo_bias, ui),
+                 AiPlayer("", SampleStrategies.bodo_quadratic_factor, SampleStrategies.bodo_linear_factor,
+                          SampleStrategies.bodo_bias)])
     game.play(True)
