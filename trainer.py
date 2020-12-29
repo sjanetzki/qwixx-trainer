@@ -39,7 +39,7 @@ class Trainer:
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_number = 1   # empiric value
+        self.fitness_game_number = 5   # empiric value
         self.points_per_ai = None
         self.ai_histories = dict()
         self.generation = 0
@@ -104,6 +104,18 @@ class Trainer:
                 points = ai.get_points()
                 point_sum_per_ai[ai] += points
                 point_list_per_ai.append(points)
+
+    def _play_against_own_copies(self, final_ai):
+        """lets final AI play against its copies"""
+        group = [deepcopy(final_ai) for _ in range(self.group_size)]
+        point_list = []
+        for _ in range(self.fitness_game_number):
+            game = Game(group)
+            game.play()
+            for ai in group:
+                point_list.append(ai.get_points())
+        average = int(sum(point_list) / len(point_list))
+        return average, self._compute_variance(point_list, average)
 
     def _split_ais_by_fitness(self, point_sum_per_ai):
         """part of _rank(); splits AIs by fitness after playing in groups"""
@@ -219,10 +231,10 @@ class Trainer:
         missing_ais = self.population_size - len(self.population)
         ais = []
         for ai_number in range(len(self.ai_histories), len(self.ai_histories) + missing_ais):
-            # ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(),
-                          # Trainer._build_random_strategy(), Trainer._build_random_strategy())
-            ai = AiPlayer(str(ai_number), SampleStrategies.bodo_quadratic_factor,
-                          SampleStrategies.bodo_linear_factor, SampleStrategies.bodo_bias)
+            ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(),
+                          Trainer._build_random_strategy(), Trainer._build_random_strategy())
+            # ai = AiPlayer(str(ai_number), SampleStrategies.bodo_quadratic_factor,
+            # SampleStrategies.bodo_linear_factor, SampleStrategies.bodo_bias)
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, "INITialization")
             ais.append(ai)
@@ -283,8 +295,10 @@ class Trainer:
             avg_points, variance = self._compute_points_statistics()
             print(f"Generation: {self.generation} \t Max: {max_points} \t Avg: {avg_points} \t Var: {variance}")
             self.generation += 1
+        best_ai, _ = self._find_strongest_ai()
+        avg_points, variance = self._play_against_own_copies(best_ai)
+        print(f"Final AI \t\t\t\t\t Avg: {avg_points} \t Var: {variance}")
         print("evolution finished")
-        # best_ai, _ = self._find_strongest_ai(population)
         if save_population_in_file:
             self._save_final_population()
 
