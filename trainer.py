@@ -28,8 +28,8 @@ class Trainer:
     strategy_parameter_max = 10
 
     def __init__(self, group_size=5, play_against_own_copies=True, population_size=100, survivor_rate=0.74,
-                 child_rate=1, mutation_rate=0.0, mutation_copy_rate=0.0, lowest_variance_rate=0.95,
-                 num_generations=50):
+                 child_rate=1, mutation_rate=0.05, mutation_copy_rate=0.0, lowest_variance_rate=0.95,
+                 num_generations=100):
         assert (population_size % group_size == 0)
         self.group_size = group_size
         self.play_against_own_copies = play_against_own_copies
@@ -102,7 +102,7 @@ class Trainer:
 
     def _play_in_groups(self, point_list_per_ai) -> None:
         """part of _rank(); lets AIs play in groups"""
-        groups = self._group()
+        groups = self._group()      # todo same lists of dice eyes for each generation to make AIs more comparable
         for original_ai, group in groups:
             game = Game(group)
             game.play()
@@ -294,24 +294,29 @@ class Trainer:
         else:
             assert(self.generation == 0 and self.population == [])
 
+        best_ai = None
+        max_points = float("-inf")
         stop_generation = self.num_generations + self.generation
         while self.generation < stop_generation:
             self._compute_next_generation()
-            _, max_points = self._find_strongest_ai()
+            strong_ai, strong_ai_points = self._find_strongest_ai()
+            if strong_ai_points > max_points:
+                max_points = strong_ai_points
+                best_ai = strong_ai
             avg_points, variance = self._compute_points_statistics()
-            print(f"Generation: {self.generation} \t Max: {max_points:.0f} \t Avg: {avg_points:.0f} "
+            print(f"Generation: {self.generation} \t Max: {strong_ai_points:.0f} \t Avg: {avg_points:.0f} "
                   f"\t Var: {variance:.0f}")
             self.generation += 1
-        best_ai, _ = self._find_strongest_ai()
         avg_points, variance = self._play_against_own_copies(best_ai)
-        print(f"Final AI \t\t\t\t\t Avg: {avg_points:.0f} \t Var: {variance:.0f}")
-        print("evolution finished")
+        print(f"Best AI \t\t\t\t\t Avg: {avg_points:.0f} \t Var: {variance:.0f}")
+        print("Evolution finished")
         if save_population_in_file:
-            self._save_final_population()
+            self._save_final_population_and_best_ai(best_ai, avg_points)
 
-    def _save_final_population(self) -> None:
-        """saves the final population of a train cycle """
+    def _save_final_population_and_best_ai(self, best_ai, avg_points) -> None:
+        """saves the final population and the best AI of a train cycle """
         pickle.dump((self.population, self.ai_histories, self.generation), open("final_population.dat", "wb"))
+        pickle.dump(best_ai, open(f"best_ai_{avg_points:.0f}_points.dat", "wb"))
 
     def _load_population(self) -> None:
         """loads the population that was saved"""
@@ -322,4 +327,4 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(load_population_from_file=False, save_population_in_file=False)
+    trainer.train(load_population_from_file=False, save_population_in_file=True)
