@@ -119,11 +119,7 @@ class Trainer:
 
     def _split_ais_by_fitness(self, point_sum_per_ai):
         """part of _rank(); splits AIs by fitness after playing in groups"""
-        variances = []
-        for ai in self.population:
-            variances.append(self.ai_histories[ai][self.generation].points_variance)
-        variance_threshold = list(sorted(variances))[int(self.lowest_variance_rate * self.population_size) - 1]
-        # todo calculate variance_th in extra function
+        variance_threshold = self._calculate_variance_threshold()
         point_sum_per_ai_temp = copy(point_sum_per_ai)
         strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
                                                     True, variance_threshold)  # side-effect intentional
@@ -132,6 +128,14 @@ class Trainer:
         weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
         return strongest_ais, middle_field, weakest_ais
+
+    def _calculate_variance_threshold(self):
+        """calculates the threshold of variance; necessary to put AIs with extreme points variance into the middle field
+        (influence from daily form too high)"""
+        variances = []
+        for ai in self.population:
+            variances.append(self.ai_histories[ai][self.generation].points_variance)
+        return list(sorted(variances))[int(self.lowest_variance_rate * self.population_size) - 1]
 
     def _create_ranking(self, point_sum_per_ai):
         """part of _rank(); creates a ranking based on the fitness of an AI"""
