@@ -28,8 +28,8 @@ class Trainer:
     strategy_parameter_max = 10
 
     def __init__(self, group_size=5, play_against_own_copies=True, population_size=100, survivor_rate=0.74,
-                 child_rate=1, mutation_rate=0.05, mutation_copy_rate=0, lowest_variance_rate=0.95,
-                 num_generations=100):
+                 child_rate=1, mutation_rate=0.0, mutation_copy_rate=0.0, lowest_variance_rate=0.95,
+                 num_generations=50):
         assert (population_size % group_size == 0)
         self.group_size = group_size
         self.play_against_own_copies = play_against_own_copies
@@ -41,7 +41,7 @@ class Trainer:
         self.num_survivors = int(survivor_rate * self.population_size)
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_number = 1   # empiric value
+        self.fitness_game_number = 3   # empiric value
         self.points_per_ai = None
         self.ai_histories = dict()
         self.generation = 0
@@ -270,11 +270,12 @@ class Trainer:
 
     def _compute_next_generation(self) -> None:
         """directs all steps that have to be done to create the next generation / a (partly) new population"""
-        self._select()
-        self._recombine()
-        self._mutate()    # &[(index, self.ai_histories[ai],ai) for (index, ai) in enumerate(population)]
+        if self.generation > 0:
+            self._select()
+            self._recombine()
+            self._mutate()
         self._add_random_ais()
-        self._rank()  # [(index, ai, list(reversed(list(self.ai_histories[ai].items())))) for (index, ai) in enumerate(population)]
+        self._rank()  # &[(ai, list(reversed(list(self.ai_histories[ai].items())))) for ai in self.population]
 
     @staticmethod
     def _build_random_strategy():
@@ -292,8 +293,6 @@ class Trainer:
             self._load_population()
         else:
             assert(self.generation == 0 and self.population == [])
-            self._add_random_ais()
-            self._rank()         # todo generation 0 two times -> only one time
 
         stop_generation = self.num_generations + self.generation
         while self.generation < stop_generation:
@@ -312,7 +311,7 @@ class Trainer:
 
     def _save_final_population(self) -> None:
         """saves the final population of a train cycle """
-        pickle.dump((self.population, self.ai_histories, self.generation), open("final_population.dat", "wb"))  # todo date in name
+        pickle.dump((self.population, self.ai_histories, self.generation), open("final_population.dat", "wb"))
 
     def _load_population(self) -> None:
         """loads the population that was saved"""
