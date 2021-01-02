@@ -1,6 +1,6 @@
 """This file creates a trainer that finds the best (fittest) AI"""
 from ai_player import AiPlayer
-from game import Game   # , SampleStrategies
+from game import Game, SampleStrategies
 import numpy as np
 from numpy import random
 import random
@@ -11,6 +11,7 @@ from copy import copy, deepcopy
 
 class AiLogEntry:
     """data to track evolution of AIs across generations during training"""
+
     def __init__(self, points_average, points_variance, events):
         self.points_average = points_average
         self.points_variance = points_variance
@@ -27,9 +28,9 @@ class Trainer:
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=5, play_against_own_copies=True, population_size=100, survivor_rate=0.74,
-                 child_rate=1, mutation_rate=0.05, mutation_copy_rate=0.0, lowest_variance_rate=0.95,
-                 num_generations=100):
+    def __init__(self, group_size=2, play_against_own_copies=False, population_size=10, survivor_rate=0.74,
+                 child_rate=1, mutation_rate=0.05, mutation_copy_rate=0.0, lowest_variance_rate=1.00,
+                 num_generations=50):
         assert (population_size % group_size == 0)
         self.group_size = group_size
         self.play_against_own_copies = play_against_own_copies
@@ -58,7 +59,8 @@ class Trainer:
                 groups.append(("different AIs", self.population[ai_index: ai_index + self.group_size]))
         return groups
 
-    def _select_extreme_ais(self, point_sum_per_ai, num_extreme_ais, selects_best_ais, variance_threshold) -> List[AiPlayer]:
+    def _select_extreme_ais(self, point_sum_per_ai, num_extreme_ais, selects_best_ais, variance_threshold) -> List[
+        AiPlayer]:
         """selects strongest or weakest AIs of a population"""
         extreme_ais = []
         for _ in range(num_extreme_ais):
@@ -95,28 +97,31 @@ class Trainer:
     @staticmethod
     def _compute_variance(numbers, average) -> float:
         """calculates the corrected sample variance of any list of numbers with a given average"""
-        variance = 0                            # korrigierte Stichprobenvarianz
+        variance = 0  # korrigierte Stichprobenvarianz
         for number in numbers:
             variance += (number - average) ** 2
         return variance / len(numbers)
 
-    def _play_in_groups(self, point_list_per_ai) -> None:
+    def _play_in_groups(self, point_list_per_ai, game_count) -> None:
         """part of _rank(); lets AIs play in groups"""
-        groups = self._group()      # todo same lists of dice eyes for each generation to make AIs more comparable
+        groups = self._group()
         for original_ai, group in groups:
             game = Game(group)
+            # same lists of dice eyes for each generation to make AIs more comparable
+            random.seed(self.generation * self.fitness_game_number + game_count)
             game.play()
             for ai in group:
                 points = ai.get_points()
                 if original_ai == "different AIs":
-                    original_ai = ai
-                point_list_per_ai[original_ai].append(points)
+                    point_list_per_ai[ai].append(points)
+                else:
+                    point_list_per_ai[original_ai].append(points)
 
     def _play_against_own_copies(self, final_ai):
         """lets final AI play against its copies"""
         group = [deepcopy(final_ai) for _ in range(self.group_size)]
         point_list = []
-        for _ in range(self.fitness_game_number):
+        for _ in range(10):
             game = Game(group)
             game.play()
             for ai in group:
@@ -129,9 +134,9 @@ class Trainer:
         variance_threshold = self._calculate_variance_threshold()
         point_sum_per_ai_temp = copy(point_sum_per_ai)
         strongest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.num_parents,
-                                                    True, variance_threshold)  # side-effect intentional
+                                                 True, variance_threshold)  # side-effect intentional
         weakest_ais = self._select_extreme_ais(point_sum_per_ai_temp, self.population_size - self.num_survivors,
-                                                  False, variance_threshold)
+                                               False, variance_threshold)
         weakest_ais = list(reversed(weakest_ais))
         middle_field = point_sum_per_ai_temp.keys()  # keys() only selects the AIs, not the points
         return strongest_ais, middle_field, weakest_ais
@@ -158,7 +163,9 @@ class Trainer:
         """lets the groups play and ranks them inside these groups by performance"""
         point_list_per_ai = {ai: [] for ai in self.population}
         for game_count in range(self.fitness_game_number):
-            self._play_in_groups(point_list_per_ai)
+            self._play_in_groups(point_list_per_ai, game_count)
+        for point_list in point_list_per_ai.values():
+            assert (len(point_list) == self.fitness_game_number)
         self._compute_avg_points_per_ai(point_list_per_ai)
         self.population = self._create_ranking(point_list_per_ai)
 
@@ -197,7 +204,7 @@ class Trainer:
             self.ai_histories[child] = dict()
             self._add_event_to_ai_history(child, "RECOmbination")
         self.population.extend(children)
-        assert(len(self.population) <= self.population_size)
+        assert (len(self.population) <= self.population_size)
 
     def _mutate_strategy(self, ai) -> int:
         """mutates randomly small parts of the strategy of an AI"""
@@ -212,7 +219,7 @@ class Trainer:
             if random.random() < self.mutation_rate:
                 ai.bias[value_index] = Trainer._adjust_strategy_range(random.random())
                 mutation_counter += 1
-        return mutation_counter                 # call by reference on ai (pointer)
+        return mutation_counter  # call by reference on ai (pointer)
 
     def _mutate(self) -> None:
         """creates a list of mutated AIs"""
@@ -241,7 +248,7 @@ class Trainer:
             ai = AiPlayer(str(ai_number), Trainer._build_random_strategy(),
                           Trainer._build_random_strategy(), Trainer._build_random_strategy())
             # ai = AiPlayer(str(ai_number), SampleStrategies.bodo_quadratic_factor,
-            # SampleStrategies.bodo_linear_factor, SampleStrategies.bodo_bias)
+                          # SampleStrategies.bodo_linear_factor, SampleStrategies.bodo_bias)
             self.ai_histories[ai] = dict()
             self._add_event_to_ai_history(ai, "INITialization")
             ais.append(ai)
@@ -292,7 +299,7 @@ class Trainer:
         if load_population_from_file:
             self._load_population()
         else:
-            assert(self.generation == 0 and self.population == [])
+            assert (self.generation == 0 and self.population == [])
 
         best_ai = None
         max_points = float("-inf")
@@ -318,6 +325,13 @@ class Trainer:
         pickle.dump((self.population, self.ai_histories, self.generation), open("final_population.dat", "wb"))
         pickle.dump(best_ai, open(f"best_ai_{avg_points:.0f}_points.dat", "wb"))
 
+    def _load_ai_as_population(self):
+        """loads a saved AI as a population, like AI loaded by SampleStrategies"""
+        file = open("best_ai_90_points.dat", "rb")
+        ai = pickle.load(file)
+        self.population = [deepcopy(ai) for _ in range(self.population_size)]
+        file.close()
+
     def _load_population(self) -> None:
         """loads the population that was saved"""
         file = open("final_population.dat", "rb")
@@ -327,4 +341,4 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(load_population_from_file=False, save_population_in_file=True)
+    trainer.train(load_population_from_file=False, save_population_in_file=False)
