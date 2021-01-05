@@ -23,13 +23,13 @@ class AiLogEntry:
 
 class Trainer:
     """trains AIs (with a genetic algorithm) in order to get the best AI out of all;
-    7 parameters therefore given manually"""
+    parameters therefore given manually"""
 
     strategy_parameter_min = -10
     strategy_parameter_max = 10
 
-    def __init__(self, group_size=2, play_against_own_copies=False, population_size=10, survivor_rate=0.74,
-                 child_rate=1, mutation_rate=0.05, mutation_copy_rate=0.0, lowest_variance_rate=1.00,
+    def __init__(self, group_size=5, play_against_own_copies=False, population_size=100, survivor_rate=0.74,
+                 child_rate=0.6, mutation_rate=0.0, mutation_copy_rate=0.0, lowest_variance_rate=0.98,
                  num_generations=50):
         assert (population_size % group_size == 0)
         self.group_size = group_size
@@ -39,10 +39,12 @@ class Trainer:
         self.mutation_copy_rate = mutation_copy_rate
         self.lowest_variance_rate = lowest_variance_rate
         self.num_generations = num_generations
+        self.survivor_rate = survivor_rate
         self.num_survivors = int(survivor_rate * self.population_size)
+        self.child_rate = child_rate
         self.num_children = int((self.population_size - self.num_survivors) * child_rate) # child_rate is relative amount of died AIs that is 'reborn' by recombination
         self.num_parents = self.num_children * 2
-        self.fitness_game_number = 3   # empiric value
+        self.fitness_game_number = 5   # empiric value
         self.points_per_ai = None
         self.ai_histories = dict()
         self.generation = 0
@@ -164,8 +166,9 @@ class Trainer:
         point_list_per_ai = {ai: [] for ai in self.population}
         for game_count in range(self.fitness_game_number):
             self._play_in_groups(point_list_per_ai, game_count)
-        for point_list in point_list_per_ai.values():
-            assert (len(point_list) == self.fitness_game_number)
+        if not self.play_against_own_copies:
+            for point_list in point_list_per_ai.values():
+                assert (len(point_list) == self.fitness_game_number)
         self._compute_avg_points_per_ai(point_list_per_ai)
         self.population = self._create_ranking(point_list_per_ai)
 
@@ -294,16 +297,23 @@ class Trainer:
         width = Trainer.strategy_parameter_max - Trainer.strategy_parameter_min
         return array_or_value * width + Trainer.strategy_parameter_min
 
-    def train(self, load_population_from_file, save_population_in_file) -> None:
+    def train(self, load_population_from_file, load_ai_as_population, save_population_in_file) -> None:
         """trains the AIs due to the parameters and returns the final and best AI"""
         if load_population_from_file:
             self._load_population()
+        if load_ai_as_population:
+            self._load_ai_as_population()
         else:
             assert (self.generation == 0 and self.population == [])
 
         best_ai = None
         max_points = float("-inf")
         stop_generation = self.num_generations + self.generation
+        print(f"group_size = {self.group_size}, play_against_own_copies = {self.play_against_own_copies}, "
+              f"population_size = {self.population_size}, survivor_rate = {self.survivor_rate}, \n"
+              f"child_rate = {self.child_rate}, mutation_rate = {self.mutation_rate}, "
+              f"mutation_copy_rate = {self.mutation_copy_rate}, lowest_variance_rate = {self.lowest_variance_rate}, "
+              f"num_generations = {self.num_generations}")
         while self.generation < stop_generation:
             self._compute_next_generation()
             strong_ai, strong_ai_points = self._find_strongest_ai()
@@ -323,13 +333,16 @@ class Trainer:
     def _save_final_population_and_best_ai(self, best_ai, avg_points) -> None:
         """saves the final population and the best AI of a train cycle """
         pickle.dump((self.population, self.ai_histories, self.generation), open("final_population.dat", "wb"))
-        pickle.dump(best_ai, open(f"best_ai_{avg_points:.0f}_points.dat", "wb"))
+        pickle.dump((best_ai, self.ai_histories[best_ai]), open(f"best_ai_{avg_points:.0f}_points.dat", "wb"))
 
     def _load_ai_as_population(self):
         """loads a saved AI as a population, like AI loaded by SampleStrategies"""
-        file = open("best_ai_90_points.dat", "rb")
-        ai = pickle.load(file)
-        self.population = [deepcopy(ai) for _ in range(self.population_size)]
+        file = open("best_ai_69_points.dat", "rb")
+        ai, ai_history = pickle.load(file)
+        for _ in range(self.population_size):
+            ai_copy = deepcopy(ai)
+            self.population.append(ai_copy)
+            self.ai_histories[ai_copy] = ai_history
         file.close()
 
     def _load_population(self) -> None:
@@ -341,4 +354,4 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(load_population_from_file=False, save_population_in_file=False)
+    trainer.train(load_population_from_file=False, load_ai_as_population=True, save_population_in_file=False)
