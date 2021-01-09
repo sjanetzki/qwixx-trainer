@@ -29,8 +29,8 @@ class Trainer:
     strategy_parameter_max = 10
 
     def __init__(self, group_size=5, play_against_own_copies=False, population_size=100, survivor_rate=0.74,
-                 child_rate=0.6, mutation_rate=0.0, mutation_copy_rate=0.0, lowest_variance_rate=0.98,
-                 num_generations=50):
+                 child_rate=1, mutation_rate=0.05, mutation_copy_rate=0.0, lowest_variance_rate=0.98,
+                 num_generations=200):
         assert (population_size % group_size == 0)
         self.group_size = group_size
         self.play_against_own_copies = play_against_own_copies
@@ -337,7 +337,7 @@ class Trainer:
 
     def _load_ai_as_population(self):
         """loads a saved AI as a population, like AI loaded by SampleStrategies"""
-        file = open("best_ai_69_points.dat", "rb")
+        file = open("best_ai_67_points.dat", "rb")
         ai, ai_history = pickle.load(file)
         for _ in range(self.population_size):
             ai_copy = deepcopy(ai)
@@ -354,4 +354,4 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(load_population_from_file=False, load_ai_as_population=True, save_population_in_file=False)
+    trainer.train(load_population_from_file=False, load_ai_as_population=False, save_population_in_file=True)

@@ -219,11 +219,10 @@ if __name__ == "__main__":
 
 
 
-    # game = Game([HumanPlayer("meep", 1, ui),
-                 # AiPlayer("meeep", 1, np.random.randn(18), np.random.randn(18), np.random.randn(18))])
+    # game = Game([HumanPlayer("meep", ui),
+                 # AiPlayer("meeep", np.random.randn(18), np.random.randn(18), np.random.randn(18))])
 
-    game = Game([AiPlayer("", SampleStrategies.bodo_quadratic_factor, SampleStrategies.bodo_linear_factor,
-                          SampleStrategies.bodo_bias, ui),
-                 AiPlayer("", SampleStrategies.bodo_quadratic_factor, SampleStrategies.bodo_linear_factor,
-                          SampleStrategies.bodo_bias)])
+    game = Game([HumanPlayer("visitor", ui),
+                 AiPlayer("", SampleStrategies.alpha_qwixx_quadratic_factor, SampleStrategies.alpha_qwixx_linear_factor,
+                          SampleStrategies.alpha_qwixx_bias)])
     game.play(True)

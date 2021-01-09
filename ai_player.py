@@ -10,9 +10,9 @@ import math
 
 
 class SampleStrategies:
-    bodo_quadratic_factor = np.array([0.0, 0, 0, 0])
-    bodo_linear_factor = np.array([1.0, -0.5, 0.5, -2.5])
-    bodo_bias = np.array([0.0, 0, -6, 0])
+    alpha_qwixx_quadratic_factor = np.array([0.0, 0, 0, 0])
+    alpha_qwixx_linear_factor = np.array([1.0, -0.5, 0.5, -2.5])
+    alpha_qwixx_bias = np.array([0.0, 0, -6, 0])
 
     caira_quadratic_factor = np.array([0.5, 0, 0, 0])
     caira_linear_factor = np.array([0.5, 0, 0, -5])
