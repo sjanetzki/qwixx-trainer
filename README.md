@@ -10,12 +10,14 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-```shell
-```
 ### Trainer
+--> genetic algorithm
 ```shell
+python trainer.py
 ```
 
-### Game --> play via PyGameUi
+### Game
+--> play via PyGameUi
 ```shell
+python game.py
 ```
