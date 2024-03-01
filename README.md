@@ -6,7 +6,7 @@ install [Python](https://www.python.org/downloads/) and set the check mark in th
 go to cmd:
 ```shell
 git clone https://github.com/sjanetzki/qwixx-trainer
-cd quixx_trainer
+cd qwixx_trainer
 pip install -r requirements.txt
 ```
 
